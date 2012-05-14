@@ -22,8 +22,8 @@ override_dh_auto_install:
 	@echo this is done at install time by the emacsen infrastructure.
 	find debian/bbdb3 -name '*.elc' -print -delete
 	@echo Info file not ready. # when it is, create debian/bbdb3.info
-	@rm --verbose debian/bbdb3/usr/share/info/bbdb.info
-	@rm --verbose debian/bbdb3/usr/share/info/dir
-	@rmdir --verbose debian/bbdb3/usr/share/info
+	-rm --verbose debian/bbdb3/usr/share/info/bbdb.info
+	-rm --verbose debian/bbdb3/usr/share/info/dir
+	-rmdir --verbose debian/bbdb3/usr/share/info
 	@echo PDF manual is just reformatted info file, not ready.
-	@rm --verbose debian/bbdb3/usr/share/doc/bbdb3/bbdb.pdf
+	-rm --verbose debian/bbdb3/usr/share/doc/bbdb3/bbdb.pdf
