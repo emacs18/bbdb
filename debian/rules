@@ -18,8 +18,8 @@ override_dh_auto_configure:
 
 override_dh_auto_install:
 	dh_auto_install -- texmfbbdbdir='$$(texmfdir)/bbdb3'
-	@echo Deleting compiled elisp files from installation tree,
-	@echo this is done at install time by the emacsen infrastructure.
+	@echo "Deleting compiled elisp from installation tree, as compilation"
+	@echo "is done at install time by the emacsen infrastructure."
 	find debian/bbdb3 -name '*.elc' -print -delete
 	@echo Info file not ready. # when it is, create debian/bbdb3.info
 	-rm --verbose debian/bbdb3/usr/share/info/bbdb.info
