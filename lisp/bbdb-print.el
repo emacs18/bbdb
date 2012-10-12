@@ -1,7 +1,7 @@
 ;;; bbdb-print.el -- for printing BBDB databases using TeX.
 
 ;; Copyright (C) 1993 Boris Goldowsky
-;; Copyright (C) 2010, 2011 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2012 Roland Winkler <winkler@gnu.org>
 
 ;; Authors: Boris Goldowsky <boris@cs.rochester.edu>
 ;;          Dirk Grunwald <grunwald@cs.colorado.edu>
@@ -390,9 +390,6 @@ from `bbdb-print-alist'.
 
 The return value is the new CURRENT-LETTER."
 
-  (bbdb-debug (if (bbdb-record-deleted-p record)
-                  (error "TeX formatting deleted record")))
-
   (let ((first-letter
          (substring (concat (bbdb-record-sortkey record) "?") 0 1))
         (name    (or (bbdb-record-note record 'tex-name)
@@ -403,7 +400,7 @@ The return value is the new CURRENT-LETTER."
         (mail    (bbdb-record-mail record))
         (phone   (bbdb-record-phone record))
         (address (bbdb-record-address record))
-        (notes   (bbdb-record-notes record))
+        (notes   (bbdb-record-Notes record))
         (bbdb-address-format-list bbdb-print-address-format-list))
 
     (when (eval bbdb-print-require)
