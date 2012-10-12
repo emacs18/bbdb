@@ -36,6 +36,14 @@ FILES=*.el
 cp ${FILES} ${ELCDIR}/
 cd ${ELCDIR}
 
+# Check if vm is installed for this flavour.
+# If not, do not install or compile bbdb-vm.
+if test \! -d ../vm; then
+    echo "vm seems uninstalled in $FLAVOR, skipping bbdb-vm"
+    rm bbdb-vm.el || echo failure to remove bbdb-vm.el
+    FILES="$(echo "$FILES" | sed 's:bbdb-vm[.]el::')"
+fi
+
 cat << EOF > path.el
 (setq load-path (cons "." load-path) byte-compile-warnings nil)
 EOF
