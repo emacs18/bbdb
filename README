@@ -136,11 +136,12 @@ nil for the arg UPDATE-P of bbdb-update-records.
 Call bbdb-mua-auto-update-init (usually in your init file)
 to hook BBDB's hook function bbdb-mua-auto-update into the MUAs.
 
-bbdb-mua-auto-update automatically displays or updates the BBDB records
-for the sender and/or recipients of a message. Its behavior is controlled
-by bbdb-mua-auto-update-p. This may take the same values as
-bbdb-mua-update-interactive-p (except read).
+bbdb-mua-auto-update automatically updates the BBDB records for the
+sender and/or recipients of a message.  If bbdb-message-pop-up is non-nil,
+the matching records are also displayed in a continuously updated BBDB window, 
 
+The behavior of bbdb-mua-auto-update is controlled by bbdb-mua-auto-update-p.
+This may take the same values as bbdb-mua-update-interactive-p (except read). 
 Binding this to a function is often most helpful for noninteractive use.
 For example, you may want to bind bbdb-mua-auto-update-p to the function
 bbdb-select-message,  see bbdb-accept-message-alist and
@@ -205,7 +206,26 @@ bbdb-select-message) is given by bbdb-mua-update-records-p.
 
 * Misc 
 
-Copyright (C) 2010, 2011 Roland Winkler <winkler@gnu.org>
+** Notes for BBDB lisp hackers:
+
+If you write your own functions and commands to modify BBDB records,
+do not call the low-level functions bbdb-record-set-* such as
+bbdb-record-set-aka, bbdb-record-set-mail etc. The recommended
+sequence of calls is
+
+*** one or multiple calls of bbdb-record-set-field for the respective
+  fields to be changed. This not only sets the fields, but it also
+  ensures the integrity of the database. Also, this makes your code
+  more robust with respect to possible future changes of BBDB's
+  innermost internals.
+
+*** a call of bbdb-change-record which updates the database after a
+  change of RECORD.
+
+*** If the changed record is displayed in the *BBDB* buffer, call
+  bbdb-redisplay-record.
+
+* Copyright (C) 2010-2012 Roland Winkler <winkler@gnu.org>
 
 This file is part of the Insidious Big Brother Database (aka BBDB),
 
