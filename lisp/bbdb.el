@@ -734,6 +734,9 @@ Allowed values are (here ADDRESS is an email address found in a message):
                 create a new record if it does not yet exist.
  a function   This functions will be called with no arguments.
                 It should return one of the above values.
+                For an example, see `bbdb-select-message' with
+                `bbdb-mua-update-records-p', `bbdb-accept-message-alist'
+                and `bbdb-ignore-message-alist'.
 
 To initiate auto-updating of BBDB records, call `bbdb-mua-auto-update-init'
 for the respective MUAs in your init file."
@@ -836,36 +839,6 @@ See also `bbdb-accept-message-alist', which has the opposite effect."
           (string :tag "Header name")
           (regexp :tag "Regexp to match on header value"))))
 
-(defcustom bbdb-accept-name-mismatch nil
-  "If non-nil accept name mismatches between messages and BBDB records.
-Thus BBDB ignores when the real name in a message differs from the name
-in a BBDB record with the same mail address as in \"John Smith <jqs@frob.com>\"
-versus \"John Q. Smith <jqs@frob.com>\".
-Allowed values are:
- non-nil constant  Accept any name mismatches.
- a number          Number of seconds BBDB displays the name mismatch.
- a regexp          If the new name matches this regexp accept the name mismatch.
- a function        This is called with two args, the record and the new name.
-                     If it returns non-nil accept the name mismatch.
-                     If it returns a number, it is the number of seconds
-                     BBDB displays the name mismatch.
- nil               BBDB asks if you want to change the name.
-See also `bbdb-use-alternate-names'."
-  :group 'bbdb-mua
-  :type '(choice (const :tag "Accept name mismatch" t)
-                 (const :tag "Query for name changes" nil)
-                 (integer :tag "Accept name mismatch, but warn for this many seconds")
-                 (regexp :tag "Accept name mismatch if new name matches this regexp")
-                 (function :tag "Function for analyzing name mismatch")))
-
-(defcustom bbdb-use-alternate-names t
-  "If non-nil collect alternate names for a record as AKA.
-Thus if BBDB changes the name in a record to the new name found in a message
-\(see `bbdb-accept-name-mismatch'), the old name is kept as AKA."
-  :group 'bbdb-mua
-  :type '(choice (const :tag "Ask to use alternate names field" t)
-                 (const :tag "Use alternate names field without asking" nil)))
-
 (defcustom bbdb-user-mail-address-re
   (and (stringp user-mail-address)
        (string-match "\\`\\([^@]*\\)\\(@\\|\\'\\)" user-mail-address)
@@ -879,33 +852,92 @@ See also `bbdb-message-try-all-headers'."
   :group 'bbdb-mua
   :type '(regexp :tag "Regexp matching your mail addresses"))
 
+(defcustom bbdb-add-name 'query
+  "How to handle new names for existing BBDB records.
+This handles messages where the real name differs from the name
+in a BBDB record with the same mail address, as in \"John Smith <jqs@frob.com>\"
+versus \"John Q. Smith <jqs@frob.com>\".
+Allowed values are:
+ t           Automatically change the name to the new value.
+ query       Query whether to use the new name.
+ nil         Ignore the new name.
+ a number    Number of seconds BBDB displays the name mismatch.
+               (without further action).
+ a function  This is called with two args, the record and the new name.
+               It should return one of the above values.
+ a regexp    If the new name matches this regexp ignore it.
+               Otherwise query to add it.
+See also `bbdb-add-aka'."
+  :group 'bbdb-mua
+  :type '(choice (const :tag "Automatically use the new name" t)
+                 (const :tag "Query for name changes" query)
+                 (const :tag "Ignore the new name" nil)
+                 (integer :tag "Number of seconds to display name mismatch")
+                 (function :tag "Function for analyzing name handling")
+                 (regexp :tag "If the new name matches this regexp ignore it.")))
+
+(defcustom bbdb-add-aka 'query
+  "How to handle alternate names for existing BBDB records.
+Allowed values are:
+ t           Automatically store alternate names as AKA.
+ query       Query whether to store alternate names as an AKA.
+ nil         Ignore alternate names.
+ a function  This is called with two args, the record and the new name.
+               It should return one of the above values.
+ a regexp    If the alternate name matches this regexp ignore it.
+               Otherwise query to add it.
+See also `bbdb-add-name'."
+  :group 'bbdb-mua
+  :type '(choice (const :tag "Automatically store alternate names as AKA" t)
+                 (const :tag "Query for alternate names" query)
+                 (const :tag "Ignore alternate names" nil)
+                 (function :tag "Function for alternate name handling")
+                 (regexp :tag "If the alternate name matches this regexp ignore it.")))
+
 (defcustom bbdb-add-mails 'query
   "How to handle new mail addresses for existing BBDB records.
+This handles messages where the mail address differs from the mail addresses
+in a BBDB record with the same name as in \"John Q. Smith <jqs@foo.com>\"
+versus \"John Q. Smith <jqs@bar.com>\".
 Allowed values are:
- t           When BBDB notices a new mail address for a record,
-               it will automatically add it to the list of mail addresses.
+ t           Automatically add new mail addresses to the list of mail addresses.
  query       Query whether to add it.
- nil         New mail addresses will never be automatically added
-               nor the user will be asked.
- a function  The function should return one of these values.
-
-See also the variable `bbdb-new-mails-always-primary' for control of whether
-the addresses go at the front of the list or the back."
+ nil         Ignore new mail addresses.
+ a number    Number of seconds BBDB displays the new address
+               (without further action).
+ a function  This is called with two args, the record and the new mail address.
+               It should return one of the above values.
+ a regexp    If the new mail address matches this regexp ignore the new address.
+               Otherwise query to add it.
+See also `bbdb-new-mails-primary'."
   :group 'bbdb-mua
   :type '(choice (const :tag "Automatically add new mail addresses" t)
-                 (const :tag "Ask before adding new mail addresses" query)
-                 (const :tag "Never add new mail addresses" nil)))
+                 (const :tag "Query before adding new mail addresses" query)
+                 (const :tag "Never add new mail addresses" nil)
+                 (number :tag "Number of seconds to display new addresses")
+                 (function :tag "Function for analyzing name handling")
+                 (regexp :tag "If the new address matches this regexp ignore it.")))
 
-(defcustom bbdb-new-mails-always-primary nil
-  "Controls where to put a new mail address in the list of known addresses.
-If this is t, then when BBDB adds a new mail address to a record, it will put it
-at the front of the list of addresses, making it the primary address.
-If it is any other non-nil value, you will be asked.
-If nil then new mail addresses will always be added at the end of the list."
+(defcustom bbdb-new-mails-primary nil
+  "Where to put new mail addresses for existing BBDB records.
+A new mail address may either become the new primary mail address,
+when it is put at the beginning of the list of mail addresses.
+Or the new mail address is added at the end of the list of mail addresses.
+Allowed values are:
+ t           Make a new address automatically the primary address.
+ query       Query whether to make it the primary address.
+ nil         Add the new address to the end of the list.
+ a function  This is called with two args, the record and the new mail address.
+               It should return one of the above values.
+ a regexp    If the new mail address matches this regexp put it at the end.
+               Otherwise query to make it the primary address.
+See also `bbdb-add-mails'."
   :group 'bbdb-mua
   :type '(choice (const :tag "New address automatically made primary" t)
-                (const :tag "Ask before making new address primary" nil)
-                (const :tag "Never make new address primary" never)))
+                 (const :tag "Query before making a new address primary" query)
+                 (const :tag "Do not make new address primary" nil)
+                 (function :tag "Function for analyzing primary handling")
+                 (regexp :tag "If the new mail address matches this regexp put it at the end.")))
 
 (defcustom bbdb-canonicalize-mail-function nil
   "If non-nil, it should be a function of one arg: a mail address string.
@@ -1150,7 +1182,7 @@ See also `bbdb-auto-notes-ignore-messages'."
           (string :tag "Header name")
           (regexp :tag "Regexp to match on header value"))))
 
-(defcustom bbdb-message-pop-up nil
+(defcustom bbdb-message-pop-up t
   "If non-nil, display a continuously updated BBDB window while using a MUA.
 If 'horiz, stack the window horizontally if there is room."
   :group 'bbdb-mua
@@ -1777,35 +1809,61 @@ May be used as value of variable `bbdb-multiple-buffers'."
           ((memq major-mode '(mail-mode vm-mail-mode message-mode))
            "message composition"))))
 
+(defsubst bbdb-add-job (spec record string)
+  "Internal function: Evaluate SPEC for RECORD and STRING.
+If SPEC is a function call it with args RECORD and STRING.  Return value.
+If SPEC is a regexp, return 'query unless SPEC matches STRING.
+Otherwise return SPEC.
+Used with variable `bbdb-add-name' and friends."
+  (cond ((functionp spec)
+         (funcall spec record string))
+        ((stringp spec)
+         (unless (string-match spec string) 'query)) ; be least aggressive
+        (spec)))
+
+(defsubst bbdb-eval-spec (spec prompt)
+  "Internal function: Evaluate SPEC using PROMPT.
+Return t if either SPEC equals t, or SPEC equals 'query and `bbdb-silent'
+is non-nil or `y-or-no-p' returns t using PROMPT.
+Used with return values of `bbdb-add-job'."
+  (or (eq spec t)
+      (and (eq spec 'query)
+           (or bbdb-silent (y-or-n-p prompt)))))
+
 ;; BBDB data structure
 (defmacro bbdb-defstruct (name &rest elts)
-  "Define two functions to operate on vector NAME for each ELT in ELTS.
-The function bbdb-NAME-ELT reads the element ELT in vector NAME.
+  "Define two functions to operate on vector NAME for each symbol ELT in ELTS.
+The function bbdb-NAME-ELT returns the element ELT in vector NAME.
 The function bbdb-NAME-set-ELT sets ELT.
 Also define a constant bbdb-NAME-length that holds the number of ELTS
 in vector NAME."
   (declare (indent 1))
   (let* ((count 0)
          (sname (symbol-name name))
+         (uname (upcase sname))
          (cname (concat "bbdb-" sname "-"))
          body)
     (dolist (elt elts)
       (let* ((selt (symbol-name elt))
              (setname  (intern (concat cname "set-" selt))))
-        (push (list 'defsubst (intern (concat cname selt)) '(vector)
-                    (format "For BBDB `%s' vector read element %i `%s'."
-                            sname count selt)
+        (push (list 'defsubst (intern (concat cname selt)) `(,name)
+                    (format "For BBDB %s read element %i `%s'."
+                            uname count selt)
                     ;; Use `elt' instead of `aref' so that these functions
                     ;; also work for the `bbdb-record-type' pseudo-code.
-                    `(elt vector ,count)) body)
-        (push (list 'defsubst setname '(vector value)
-                    (format "For BBDB `%s' vector set element %i `%s'.
-Return new value."
-                            sname count selt)
-                    `(aset vector ,count value)) body))
+                    `(elt ,name ,count)) body)
+        (push (list 'defsubst setname `(,name value)
+                    (format "For BBDB %s set element %i `%s' to VALUE.  \
+Return VALUE.
+Do not call this function directly.  Call instead `bbdb-record-set-field'
+which ensures the integrity of the database.  Also, this makes your code
+more robust with respect to possible future changes of BBDB's innermost
+internals."
+                            uname count selt)
+                    `(aset ,name ,count value)) body))
       (setq count (1+ count)))
     (push (list 'defconst (intern (concat cname "length")) count
-                (concat "Length of BBDB `" sname "' vector.")) body)
+                (concat "Length of BBDB `" sname "'.")) body)
     (cons 'progn body)))
 
 ;; Define RECORD:
@@ -1827,10 +1885,20 @@ Return new value."
 ;; Define record CACHE:
 ;; - fl-name (first and last name of the person referred to by the record),
 ;; - lf-name (last and first name of the person referred to by the record),
+;; - mail-aka (list of names associated with mail addresses)
+;; - mail-canon (list of canonical mail addresses)
 ;; - sortkey (the concatenation of the elements used for sorting the record),
 ;; - marker  (position of beginning of record in `bbdb-file')
 (bbdb-defstruct cache
-  fl-name lf-name sortkey marker)
+  fl-name lf-name mail-aka mail-canon sortkey marker)
+
+(defsubst bbdb-record-mail-aka (record)
+  "Record cache function: Return mail-aka for RECORD."
+  (bbdb-cache-mail-aka (bbdb-record-cache record)))
+
+(defsubst bbdb-record-mail-canon (record)
+  "Record cache function: Return mail-canon for RECORD."
+  (bbdb-cache-mail-canon (bbdb-record-cache record)))
 
 ;; `bbdb-hashtable' associates with each KEY a list of matching records.
 ;; KEY includes fl-name, lf-name, organizations, AKAs and email addresses.
@@ -1866,30 +1934,36 @@ PREDICATE may take the same values as `bbdb-completion-list'."
       (if (or (not predicate) (eq t predicate))
           all-records
         (dolist (record all-records)
-          (if (and (memq 'fl-name predicate)
-                   (string= key (or (downcase (bbdb-record-name record))
-                                    "")))
-              (push record records))
-          (if (and (memq 'lf-name predicate)
-                   (string= key (or (downcase (bbdb-record-name-lf record))
-                                    "")))
-              (push record records))
-          (if (memq 'aka predicate)
-              (dolist (aka (bbdb-record-aka record))
-                (if (string= key (downcase aka))
-                    (push record records))))
-          (if (memq 'organization predicate)
-              (dolist (organization (bbdb-record-organization record))
-                (if (string= key (downcase organization))
-                    (push record records))))
-          (if (memq 'primary predicate)
-              (if (string= key (downcase (car (bbdb-record-mail record))))
-                  (push record records)))
-          (if (memq 'mail predicate)
-              (dolist (mail (bbdb-record-mail record))
-                (if (string= key (downcase mail))
-                    (push record records)))))
-        (delete-dups records)))))
+          (if (catch 'bbdb-hash-ok
+                (bbdb-hash-p key record predicate))
+              (push record records)))
+        records))))
+
+(defun bbdb-hash-p (key record predicate)
+  "Throw `bbdb-hash-ok' non-nil if KEY matches RECORD acording to PREDICATE.
+PREDICATE may take the same values as the elements of `bbdb-completion-list'."
+  (if (and (memq 'fl-name predicate)
+           (bbdb-string= key (or (bbdb-record-name record) "")))
+      (throw 'bbdb-hash-ok 'fl-name))
+  (if (and (memq 'lf-name predicate)
+           (bbdb-string= key (or (bbdb-record-name-lf record) "")))
+      (throw 'bbdb-hash-ok 'lf-name))
+  (if (memq 'organization predicate)
+      (mapc (lambda (organization) (if (bbdb-string= key organization)
+                                       (throw 'bbdb-hash-ok 'organization)))
+            (bbdb-record-organization record)))
+  (if (memq 'aka predicate)
+      (mapc (lambda (aka) (if (bbdb-string= key aka)
+                              (throw 'bbdb-hash-ok 'aka)))
+            (bbdb-record-field record 'aka-all)))
+  (if (and (memq 'primary predicate)
+           (bbdb-string= key (car (bbdb-record-mail-canon record))))
+      (throw 'bbdb-hash-ok 'primary))
+  (if (memq 'mail predicate)
+      (mapc (lambda (mail) (if (bbdb-string= key mail)
+                               (throw 'bbdb-hash-ok 'mail)))
+            (bbdb-record-mail-canon record)))
+  nil)
 
 (defun bbdb-remhash (key record)
   "Remove RECORD from list of records associated with KEY.
@@ -1910,8 +1984,22 @@ KEY must be a string or nil.  Empty strings and nil are ignored."
     (bbdb-puthash organization record))
   (dolist (aka (bbdb-record-aka record))
     (bbdb-puthash aka record))
-  (dolist (mail (bbdb-record-mail record))
-    (bbdb-puthash mail record)))
+  (bbdb-puthash-mail record))
+
+(defun bbdb-puthash-mail (record)
+  "For RECORD put mail into `bbdb-hashtable'."
+  (let (mail-aka mail-canon address)
+    (dolist (mail (bbdb-record-mail record))
+      (setq address (mail-extract-address-components mail))
+      (when (car address)
+        (push (car address) mail-aka)
+        (bbdb-puthash (car address) record))
+      (push (nth 1 address) mail-canon)
+      (bbdb-puthash (nth 1 address) record))
+    (bbdb-cache-set-mail-aka (bbdb-record-cache record)
+                             (nreverse mail-aka))
+    (bbdb-cache-set-mail-canon (bbdb-record-cache record)
+                               (nreverse mail-canon))))
 
 (defun bbdb-hash-update (record old new)
   "Update hash for RECORD.  Remove OLD, insert NEW.
@@ -2117,15 +2205,39 @@ TYPE is a pseudo-code as in `bbdb-record-type'."
 ;; (bbdb-check-type (vector 'sbar "foo") '(vector symbol string))
 ;; (bbdb-check-type '(bar (bar . "foo")) '(list symbol (cons symbol string)))
 
-(defun bbdb-record-get-field (record field)
-  "For RECORD return FIELD."
+(defun bbdb-record-field (record field)
+  "For RECORD return the value of FIELD.
+
+FIELD may take the following values
+ firstname     Return the first name of RECORD
+ lastname      Return the last name of RECORD
+ name          Return the full name of RECORD (first name first)
+ name-lf       Return the full name of RECORD (last name first)
+ affix         Return the list of affixes
+ organization  Return the list of organizations
+ aka           Return the list of AKAs
+ aka-all       Return the list of AKAs plus mail-akas.
+ mail          Return the list of email addresses
+ mail-aka      Return the list of name parts in mail addresses
+ mail-canon    Return the list of canonical mail addresses.
+ phone         Return the list of phone numbers
+ address       Return the list of addresses
+ Notes         Return the list of all note fields
+
+Any other symbol is interpreted as the key for a note field.
+Then VALUE is the value of this field."
   (cond ((eq field 'firstname) (bbdb-record-firstname record))
         ((eq field 'lastname) (bbdb-record-lastname record))
         ((eq field 'name)     (bbdb-record-name record))
+        ((eq field 'name-lf)  (bbdb-record-name-lf record))
         ((eq field 'affix)    (bbdb-record-affix record))
         ((eq field 'organization)  (bbdb-record-organization record))
         ((eq field 'mail)     (bbdb-record-mail record))
+        ((eq field 'mail-canon) (bbdb-record-mail-canon record)) ; derived (cached) field
+        ((eq field 'mail-aka) (bbdb-record-mail-aka record)) ; derived (cached) field
         ((eq field 'aka)      (bbdb-record-aka record))
+        ((eq field 'aka-all)  (append (bbdb-record-aka record) ; derived field
+                                      (bbdb-record-mail-aka record)))
         ((eq field 'phone)    (bbdb-record-phone record))
         ((eq field 'address)  (bbdb-record-address record))
         ;; Return all note fields
@@ -2133,13 +2245,32 @@ TYPE is a pseudo-code as in `bbdb-record-type'."
         ;; Return note FIELD (e.g., `notes') or nil if FIELD is not defined.
         ((symbolp field) (bbdb-record-note record field))
         (t (error "Unknown field type `%s'" field))))
+(define-obsolete-function-alias 'bbdb-record-get-field 'bbdb-record-field)
 
 (defun bbdb-record-set-field (record field value &optional merge check)
   "For RECORD set FIELD to VALUE.  Return VALUE.
 If MERGE is non-nil, merge VALUE with the current value of FIELD.
 If CHECK is non-nil, check syntactically whether FIELD may take VALUE.
 This function also updates the hash table.  However, it does not update
-RECORD in the database."
+RECORD in the database.  Use `bbdb-change-record' for that.
+
+FIELD may take the following values
+ firstname     VALUE is the first name of RECORD
+ lastname      VALUE is the last name of RECORD
+ name          VALUE is the full name of RECORD either as one string
+                 or as a cons pair (FIRST . LAST)
+ affix         VALUE is the list of affixes
+ organization  VALUE is the list of organizations
+ aka           VALUE is the list of AKAs
+ mail          VALUE is the list of email addresses
+ phone         VALUE is the list of phone numbers
+ address       VALUE is the list of addresses
+ Notes         VALUE is the list of all note fields
+
+Any other symbol is interpreted as the key for a note field.
+Then VALUE is the value of this field."
+  (if (memq field '(name-lf mail-aka mail-canon aka-all))
+      (error "`%s' is not allowed as the name of a field" field))
   (let ((record-type (cdr bbdb-record-type)))
     (cond ((eq field 'firstname) ; First name
            (if merge (error "Does not merge names"))
@@ -2202,8 +2333,12 @@ RECORD in the database."
                (let ((old (remq record (bbdb-gethash mail '(mail)))))
                  (if old (error "Mail address \"%s\" is used by \"%s\""
                                 mail (mapconcat 'bbdb-record-name old ", "))))))
-           (bbdb-hash-update record (bbdb-record-mail record) value)
-           (bbdb-record-set-mail record value))
+           (dolist (aka (bbdb-record-mail-aka record))
+             (bbdb-remhash aka record))
+           (dolist (mail (bbdb-record-mail-canon record))
+             (bbdb-remhash mail record))
+           (bbdb-record-set-mail record value)
+           (bbdb-puthash-mail record))
 
           ;; Phone
           ((eq field 'phone)
@@ -2312,6 +2447,7 @@ Case is ignored.  Return name as (FIRST . LAST).
 LAST is always a string (possibly empty).  FIRST may be nil."
   (let ((case-fold-search t)
         first last suffix)
+    ;; FIXME: This could be smarter with names of the form "Last, First"
     (if (string-match (concat "[-,. \t/\\]+\\("
                               (regexp-opt bbdb-lastname-suffixes)
                               ;; suffices are complemented by optional `.'.
@@ -2730,9 +2866,9 @@ With REMHASH non-nil, also remove RECORD from the hash table."
       (bbdb-remhash (bbdb-record-name-lf record) record)
       (dolist (organization (bbdb-record-organization record))
         (bbdb-remhash organization record))
-      (dolist (mail (bbdb-record-mail record))
+      (dolist (mail (bbdb-record-mail-canon record))
         (bbdb-remhash mail record))
-      (dolist (aka (bbdb-record-aka record))
+      (dolist (aka (bbdb-record-field record 'aka-all))
         (bbdb-remhash aka record)))
     (bbdb-record-set-sortkey record nil)
     (setq bbdb-modified t)))
@@ -3516,7 +3652,6 @@ For address completion using the names and mail addresses in the database:
 \t in Message mode, type \\<message-mode-map>\\[bbdb-complete-mail].
 
 Important variables:
-\t `bbdb-add-mails'
 \t `bbdb-auto-revert'
 \t `bbdb-canonicalize-redundant-mails'
 \t `bbdb-case-fold-search'
@@ -3526,14 +3661,15 @@ Important variables:
 \t `bbdb-layout'
 \t `bbdb-file'
 \t `bbdb-message-caching'
-\t `bbdb-new-mails-always-primary'
 \t `bbdb-phone-style'
 \t `bbdb-check-auto-save-file'
 \t `bbdb-pop-up-layout'
 \t `bbdb-pop-up-window-size'
-\t `bbdb-accept-name-mismatch'
+\t `bbdb-add-name'
+\t `bbdb-add-aka'
+\t `bbdb-add-mails'
+\t `bbdb-new-mails-primary'
 \t `bbdb-read-only'
-\t `bbdb-use-alternate-names'
 \t `bbdb-message-pop-up'
 \t `bbdb-user-mail-address-re'
 
