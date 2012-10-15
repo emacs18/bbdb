@@ -1,5 +1,5 @@
-bbdb3 (3.02.2012.08.10-1) unstable; urgency=low
+bbdb3 (3.02.2012.09.15-1) unstable; urgency=low
 
   * Initial release (closes: #617634)
 
- -- Barak A. Pearlmutter <bap@debian.org>  Mon, 02 Jan 2012 18:01:37 +0100
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 15 Oct 2012 19:59:57 +0100
