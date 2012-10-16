@@ -84,7 +84,7 @@ slightly munged old BBDB files."
         bbdb-migrate-notes-to-list)
        (bbdb-record-organization bbdb-record-set-organization
         bbdb-migrate-organization-to-list))
-    (7 (bbdb-record-notes bbdb-record-set-notes
+    (7 (bbdb-record-Notes bbdb-record-set-Notes
         bbdb-migrate-insert-uuid)))
   "The alist of (version . migration-spec-li
 st).
