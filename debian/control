@@ -5,7 +5,7 @@ Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends: debhelper (>= 9),
 	       dh-autoreconf,
 	       texinfo,
-	       emacs23-nox | emacs23 | emacs
+	       emacs | emacs24-nox | emacs24 | emacs23-nox | emacs23
 Standards-Version: 3.9.4
 Homepage: http://savannah.nongnu.org/projects/bbdb/
 Vcs-Git: git://git.debian.org/collab-maint/bbdb3.git
@@ -14,6 +14,7 @@ Vcs-Browser: http://git.debian.org/?p=collab-maint/bbdb3.git;a=summary
 Package: bbdb3
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: emacs | emacs24 | emacs23 | emacs-snapshot | emacsen
 Replaces: bbdb
 Provides: bbdb
 Breaks: bbdb (<< 3)
