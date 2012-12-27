@@ -24,7 +24,7 @@
 
 ;;; This file lets you do stuff like
 ;;;
-;;; o  automatically add some string to the notes field(s) based on the
+;;; o  automatically add some string to some field(s) based on the
 ;;;    contents of header fields of the current message
 ;;; o  only automatically create records when certain header fields
 ;;;    are matched
@@ -57,30 +57,32 @@
   (autoload 'message-field-value "message")
   (autoload 'mail-decode-encoded-word-string "mail-parse"))
 
+(defconst bbdb-mua-mode-alist
+  '((vm vm-mode vm-virtual-mode vm-summary-mode vm-presentation-mode)
+    (gnus gnus-summary-mode gnus-article-mode gnus-tree-mode)
+    (rmail rmail-mode rmail-summary-mode)
+    (mh mhe-mode mhe-summary-mode mh-folder-mode)
+    (message message-mode)
+    (mail mail-mode))
+  "Alist of MUA modes supported by BBDB.
+Each element is of the form (MUA MODE MODE ...), where MODEs are used by MUA.")
+
 (defun bbdb-mua ()
   "For the current message return the MUA.
 Return values include
   gnus      Newsreader Gnus
   rmail     Reading Mail in Emacs
-  vm        VM
+  vm        Viewmail
   mh        Emacs interface to the MH mail system (aka MH-E)
   message   Mail and News composition mode that goes with Gnus
   mail      Emacs Mail Mode."
-  (cond ((memq major-mode ;; VM
-               '(vm-mode vm-virtual-mode vm-summary-mode vm-presentation-mode))
-         'vm)
-        ((memq major-mode ;; Gnus
-               '(gnus-summary-mode gnus-article-mode gnus-tree-mode))
-         'gnus)
-        ((memq major-mode '(rmail-mode rmail-summary-mode)) ;; Rmail
-         'rmail)
-        ((memq major-mode '(mhe-mode mhe-summary-mode mh-folder-mode)) ;: MH-E
-         'mh)
-        ((eq major-mode 'message-mode) ;; Message mode
-         'message)
-        ((eq major-mode 'mail-mode) ;; Mail mode
-         'mail)
-        (t (error "BBDB: MUA `%s' not supported" major-mode))))
+  (let ((mm-alist bbdb-mua-mode-alist)
+        elt mua)
+    (while (setq elt (pop mm-alist))
+      (if (memq major-mode (cdr elt))
+          (setq mua (car elt)
+                mm-alist nil)))
+    (or mua (error "BBDB: MUA `%s' not supported" major-mode))))
 
 ;;;###autoload
 (defun bbdb-message-header (header)
@@ -251,6 +253,9 @@ Usually this function is called by the wrapper `bbdb-mua-update-records'."
                (task
                 (catch 'done
                   (setq hits
+                        ;; We put the call of `bbdb-notice-mail-hook'
+                        ;; into `bbdb-annotate-message' so that this hook
+                        ;; runs only if the user agreed to change a record.
                         (cond ((eq bbdb-update-records-p 'create)
                                (bbdb-annotate-message address 'create))
                               ((eq bbdb-update-records-p 'query)
@@ -542,6 +547,7 @@ UPDATE-P is defined in `bbdb-update-records'."
 
 (defmacro bbdb-mua-wrapper (&rest body)
   "Perform BODY in a MUA buffer."
+  (declare (debug t))
   `(let ((mua (bbdb-mua)))
      ;; Here we replicate BODY multiple times which gets clumsy
      ;; for a larger BODY!
@@ -571,6 +577,19 @@ Called with a prefix, the value of UPDATE-P becomes the cdr of this variable."
           (unless (string= "" str) (intern str))) ; nil otherwise
       update-p)))
 
+(defun bbdb-mua-window-p ()
+  "Return lambda function matching the MUA window.
+This return value can be used as arg HORIZ-P of `bbdb-display-records'."
+  (let ((mm-alist bbdb-mua-mode-alist)
+        elt fun)
+    (while (setq elt (cdr (pop mm-alist)))
+      (if (memq major-mode elt)
+          (setq fun `(lambda (window)
+                       (with-current-buffer (window-buffer window)
+                         (memq major-mode ',elt)))
+                mm-alist nil)))
+    fun))
+
 ;;;###autoload
 (defun bbdb-mua-display-records (&optional header-class update-p)
   "Display the BBDB record(s) for the addresses in this message.
@@ -584,10 +603,11 @@ use all classes in `bbdb-message-headers'.
 UPDATE-P may take the same values as `bbdb-update-records-p'.
 For interactive calls, see function `bbdb-mua-update-interactive-p'."
   (interactive (list nil (bbdb-mua-update-interactive-p)))
-  (let (records)
+  (let ((bbdb-pop-up-window-size bbdb-mua-pop-up-window-size)
+        records)
     (bbdb-mua-wrapper
      (setq records (bbdb-mua-update-records header-class update-p)))
-    (if records (bbdb-display-records records))
+    (if records (bbdb-display-records records nil nil nil (bbdb-mua-window-p)))
     records))
 
 ;;;###autoload
@@ -617,9 +637,9 @@ If the records do not exist, they are generated."
 
 (defun bbdb-annotate-record (record annotation &optional field replace)
   "In RECORD add an ANNOTATION to FIELD.
-FIELD defaults to note field `notes'.
+FIELD defaults to xfield `notes'.
 If REPLACE is non-nil, ANNOTATION replaces the content of FIELD."
-  (if (memq field '(name firstname lastname phone address Notes))
+  (if (memq field '(name firstname lastname phone address xfields))
       (error "Field `%s' illegal" field))
   (unless (string= "" (setq annotation (bbdb-string-trim annotation)))
     (cond ((memq field '(affix organization mail aka))
@@ -676,7 +696,7 @@ For interactive calls, use car of `bbdb-mua-update-interactive-p'."
                      "Field: "
                      (mapcar 'symbol-name
                              (append '(name affix organization aka mail)
-                                     bbdb-notes-label-list)))))
+                                     bbdb-xfield-label-list)))))
         (car bbdb-mua-update-interactive-p)))
 
 ;;;###autoload
@@ -688,14 +708,15 @@ For interactive calls, use car of `bbdb-mua-update-interactive-p'.
 HEADER-CLASS is defined in `bbdb-message-headers'.  If it is nil,
 use all classes in `bbdb-message-headers'."
   (interactive (bbdb-mua-edit-field-interactive))
-  (cond ((memq field '(firstname lastname address phone Notes))
+  (cond ((memq field '(firstname lastname address phone xfields))
          (error "Field `%s' not editable this way" field))
         ((not field)
          (setq field 'notes)))
   (bbdb-mua-wrapper
-   (let ((records (bbdb-mua-update-records header-class update-p)))
+   (let ((records (bbdb-mua-update-records header-class update-p))
+         (bbdb-pop-up-window-size bbdb-mua-pop-up-window-size))
      (when records
-       (bbdb-display-records records)
+       (bbdb-display-records records nil nil nil (bbdb-mua-window-p))
        (dolist (record records)
          (bbdb-edit-field record field)
          (bbdb-maybe-update-display record))))))
@@ -734,8 +755,9 @@ use all classes in `bbdb-message-headers'.
 UPDATE-P may take the same values as `bbdb-mua-auto-update-p'.
 If UPDATE-P is nil, use `bbdb-mua-auto-update-p' (which see).
 
-If `bbdb-message-pop-up' is non-nil, the *BBDB* buffer is displayed
+If `bbdb-mua-pop-up' is non-nil, the *BBDB* buffer is displayed
 along with the MUA window(s), showing the matching records.
+If this is nil, BBDB is updated silently.
 
 This function is intended for noninteractive use via appropriate MUA hooks.
 Call `bbdb-mua-auto-update-init' in your init file to put this function
@@ -744,23 +766,11 @@ See `bbdb-mua-display-records' and friends for interactive commands."
   (let* ((bbdb-silent-internal t)
          (records (bbdb-mua-update-records header-class
                                            (or update-p
-                                               bbdb-mua-auto-update-p))))
-    (if bbdb-message-pop-up
+                                               bbdb-mua-auto-update-p)))
+         (bbdb-pop-up-window-size bbdb-mua-pop-up-window-size))
+    (if bbdb-mua-pop-up
         (if records
-            (let* ((mua (bbdb-mua))
-                   (mode (cond ((eq mua 'vm) 'vm-mode)
-                               ((eq mua 'gnus) 'gnus-article-mode)
-                               ((eq mua 'rmail) 'rmail-mode)
-                               ((eq mua 'mh) 'mh-folder-mode)
-                               ((eq mua 'message) 'message-mode)
-                               ((eq mua 'mail) 'mail-mode))))
-              (bbdb-display-records
-               records nil nil nil
-               ;; We consider horizontal window splitting for windows
-               ;; that are used by the MUA.
-               `(lambda (window)
-                  (with-current-buffer (window-buffer window)
-                    (eq major-mode ',mode)))))
+              (bbdb-display-records records nil nil nil (bbdb-mua-window-p))
           ;; If there are no records, empty the BBDB window.
           (bbdb-undisplay-records)))
     records))
