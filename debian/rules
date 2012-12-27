@@ -2,9 +2,7 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-dh_targets=binary binary-arch binary-indep build build-arch build-indep clean install
-
-$(dh_targets) %:
+%:
 	dh $@ --with autoreconf --parallel
 
 override_dh_auto_configure:
@@ -13,8 +11,6 @@ override_dh_auto_configure:
 		texmfdir='$${datadir}/texmf' \
 		--docdir='$${datarootdir}/doc/bbdb3' \
 		--with-lispdir='$${datadir}/emacs/site-lisp/bbdb3'
-
-.PHONY: $(dh_targets)
 
 override_dh_auto_install:
 	dh_auto_install -- texmfbbdbdir='$$(texmfdir)/bbdb3'
