@@ -1,11 +1,34 @@
+dnl configure.ac --- configuration setup for BBDB
+
+dnl Author:        Didier Verna <didier@xemacs.org>
+dnl Maintainer:    Roland Winkler <winkler@gnu.org>
+dnl Created:       Tue Nov 14 18:28:52 2000
+
+dnl Copyright (C) 2000-2001 Didier Verna <didier@xemacs.org>
+dnl Copyright (C) 2011-2013 Roland Winkler <winkler@gnu.org>
+
+dnl BBDB is free software: you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation, either version 3 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl BBDB is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with BBDB.  If not, see <http://www.gnu.org/licenses/>.
+
 dnl Process this file with autoconf to produce a new configure script
 
 AC_PREREQ([2.64])
 
-AC_INIT([bbdb],[3.02.2012.12.26],[bbdb-info@lists.sourceforge.net])
+AC_INIT([bbdb],[3.02.2013.02.16],[bbdb-info@lists.sourceforge.net],[],[http://savannah.nongnu.org/projects/bbdb/])
 
 AC_COPYRIGHT([Copyright (C) 2000-2001 Didier Verna <didier@xemacs.org>.
-Copyright (C) 2011-2012 Roland Winkler <winkler@gnu.org>.])
+Copyright (C) 2011-2013 Roland Winkler <winkler@gnu.org>.])
+AC_REVISION([$Revision: 1.15 $])
 
 AC_CONFIG_SRCDIR([lisp/bbdb.el])
 AC_CONFIG_MACRO_DIR([m4])

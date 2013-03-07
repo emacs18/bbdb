@@ -1,7 +1,7 @@
 ;;; bbdb-vm.el --- BBDB interface to VM
 
 ;; Copyright (C) 1991, 1992, 1993 Jamie Zawinski <jwz@netscape.com>.
-;; Copyright (C) 2010-2012 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2013 Roland Winkler <winkler@gnu.org>
 
 ;; This file is part of the Insidious Big Brother Database (aka BBDB),
 
@@ -22,19 +22,18 @@
 ;;; This file contains the BBDB interface to VM.
 ;;; See the BBDB info manual for documentation.
 
-(eval-and-compile
-  (require 'bbdb)
-  (require 'bbdb-com)
-  (require 'bbdb-mua)
-  (require 'vm-autoload)
-  (require 'vm)
-  (require 'vm-motion)
-  (require 'vm-summary)
-  (require 'vm-mime)
-  (require 'vm-vars)
-  (require 'vm-macro)
-  (require 'vm-message)
-  (require 'vm-misc))
+(require 'bbdb)
+(require 'bbdb-com)
+(require 'bbdb-mua)
+(require 'vm-autoload)
+(require 'vm)
+(require 'vm-motion)
+(require 'vm-summary)
+(require 'vm-mime)
+(require 'vm-vars)
+(require 'vm-macro)
+(require 'vm-message)
+(require 'vm-misc)
 
 (defcustom bbdb/vm-update-records-p
   (lambda ()
@@ -330,6 +329,29 @@ Do not call this in your init file.  Use `bbdb-initialize'."
   ;; `mail-mode-map' is the parent of `vm-mail-mode-map'.
   ;; So the following is also done by `bbdb-insinuate-mail'.
   (if (and bbdb-complete-mail (boundp 'vm-mail-mode-map))
-      (define-key vm-mail-mode-map "\M-\t" 'bbdb-complete-mail)))
+      (define-key vm-mail-mode-map "\M-\t" 'bbdb-complete-mail))
+
+  ;; Set up user field for use in `vm-summary-format'
+  ;; (1) Big solution: use whole name
+  (if bbdb-mua-summary-unify-format-letter
+      (fset (intern (concat "vm-summary-function-"
+                            bbdb-mua-summary-unify-format-letter))
+            (lambda (m) (bbdb-mua-summary-unify
+                         ;; VM does not give us the original From header.
+                         ;; So we have to work backwards.
+                         (let ((name (vm-decode-mime-encoded-words-in-string
+                                      (vm-su-interesting-full-name m)))
+                               (mail (vm-su-from m)))
+                           (if (string= name mail) mail
+                             (format "\"%s\" <%s>" name mail)))))))
+
+  ;; (2) Small solution: a mark for messages whos sender is in BBDB.
+  (if bbdb-mua-summary-mark-format-letter
+      (fset (intern (concat "vm-summary-function-"
+                            bbdb-mua-summary-mark-format-letter))
+            ;; VM does not give us the original From header.
+            ;; So we assume that the mail address is sufficient to identify
+            ;; the BBDB record of the sender.
+            (lambda (m) (bbdb-mua-summary-mark (vm-su-from m))))))
 
 (provide 'bbdb-vm)

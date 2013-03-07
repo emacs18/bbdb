@@ -1,7 +1,7 @@
 ;;; bbdb.el --- core of BBDB
 
 ;; Copyright (C) 1991, 1992, 1993, 1994 Jamie Zawinski <jwz@netscape.com>.
-;; Copyright (C) 2010-2012 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2013 Roland Winkler <winkler@gnu.org>
 
 ;; This file is part of the Insidious Big Brother Database (aka BBDB),
 
@@ -602,6 +602,16 @@ Case is ignored."
   :group 'bbdb-record-edit
   :type '(repeat string))
 
+(defcustom bbdb-lastname-re
+  (concat "[- \t]*\\(\\(?:\\<"
+          (regexp-opt bbdb-lastname-prefixes)
+          ;; multiple last names concatenated by `-'
+          "\\>[- \t]+\\)?\\(?:\\w+[ \t]*-[ \t]*\\)*\\w+\\)\\'")
+  "Regexp matching the last name of a full name.
+Its first parenthetical subexpression becomes the last name."
+  :group 'bbdb-record-edit
+  :type 'regexp)
+
 (defcustom bbdb-lastname-suffixes
  '("Jr" "Sr" "II" "III")
   "List of lastname suffixes recognized in name fields.
@@ -609,6 +619,16 @@ Used to dividing name strings into firstname and lastname parts.
 All suffixes are complemented by optional `.'.  Case is ignored."
   :group 'bbdb-record-edit
   :type '(repeat string))
+
+(defcustom bbdb-lastname-suffix-re
+  (concat "[-,. \t/\\]+\\("
+          (regexp-opt bbdb-lastname-suffixes)
+          ;; suffices are complemented by optional `.'.
+          "\\.?\\)\\W*\\'")
+  "Regexp matching the suffix of a last name.
+Its first parenthetical subexpression becomes the suffix."
+  :group 'bbdb-record-edit
+  :type 'regexp)
 
 (defcustom bbdb-default-domain nil
   "Default domain to append when prompting for a new mail address.
@@ -1264,9 +1284,64 @@ For merging xfield LABEL, this will use MERGE-FUN."
 (define-obsolete-variable-alias 'bbdb-merge-notes-function-alist
   'bbdb-merge-xfield-function-alist)
 
+(defcustom bbdb-mua-summary-unification-list
+  '(name mail message-name message-mail message-address)
+  "List of FIELDs considered by `bbdb-mua-summary-unify'.
+For the RECORD matching the address of a message, `bbdb-mua-summary-unify'
+returns the first non-empty field value matching an element FIELD from this list.
+Each element FIELD may be a valid argument of `bbdb-record-field' for RECORD.
+In addition, this list may also include the following elements:
+  message-name     The name in the address of the message
+  message-mail     The mail in the address of the message
+  message-address  The complete address of the message
+These provide a fallback if a message does not have a matching RECORD
+or if some FIELD of RECORD is empty."
+  :group 'bbdb-mua
+  :type 'list)
+
+(defcustom bbdb-mua-summary-mark-field 'mark-char
+  "BBDB xfield whose value is used to mark message addresses known to BBDB.
+See `bbdb-mua-summary-mark' and `bbdb-mua-summary-unify'.
+See also `bbdb-mua-summary-mark'."
+  :group 'bbdb-mua-gnus
+  :type 'symbol)
+
+(defcustom bbdb-mua-summary-mark "+"
+  "Default mark for message addresses known to BBDB.
+If nil do not mark message addresses known to BBDB.
+See `bbdb-mua-summary-mark' and `bbdb-mua-summary-unify'.
+See also `bbdb-mua-summary-mark-field'."
+  :group 'bbdb-mua
+  :type '(choice (string :tag "Mark used")
+                 (const :tag "Do not mark known posters" nil)))
+
+(defcustom bbdb-mua-summary-unify-format-letter "B"
+  "Letter required for `bbdb-mua-summary-unify' in the MUA Summary format string.
+For Gnus, combine it with the %u specifier in `gnus-summary-line-format'
+\(see there), for example use \"%U%R%z%I%(%[%4L: %-23,23uB%]%) %s\\n\".
+For VM, combine it with the %U specifier in `vm-summary-format' (see there),
+for example, use \"%n %*%a %-17.17UB %-3.3m %2d %4l/%-5c %I\\\"%s\\\"\\n\".
+This customization of `gnus-summary-line-format' / `vm-summary-format'
+is required to use `bbdb-mua-summary-unify'.
+Currently no other MUAs support this BBDB feature."
+  :group 'bbdb-mua
+  :type 'string)
+
+(defcustom bbdb-mua-summary-mark-format-letter "b"
+  "Letter required for `bbdb-mua-summary-mark' in the MUA Summary format string.
+For Gnus, combine it with the %u specifier in `gnus-summary-line-format'
+\(see there), for example, use \"%U%R%z%I%(%[%4L: %ub%-23,23f%]%) %s\\n\".
+For VM, combine it with the %U specifier in `vm-summary-format' (see there),
+for example, use \"%n %*%a %Ub%-17.17F %-3.3m %2d %4l/%-5c %I\\\"%s\\\"\\n\".
+This customization of `gnus-summary-line-format' / `vm-summary-format'
+is required to use `bbdb-mua-summary-mark'.
+Currently no other MUAs support this BBDB feature."
+  :group 'bbdb-mua
+  :type 'string)
+
 
 ;;; Sending mail
-(defcustom bbdb-mail-user-agent nil
+(defcustom bbdb-mail-user-agent mail-user-agent
   "Mail user agent used by BBDB.
 Allowed values are those allowed for `mail-user-agent'."
   :group 'bbdb-sendmail
@@ -1287,6 +1362,27 @@ Allowed values are those allowed for `mail-user-agent'."
                                vm-user-agent)
                 (function :tag "Other")
                 (const :tag "Default" nil)))
+
+(defcustom bbdb-mail-name-format 'first-last
+  "Format for names when sending mail.
+If first-last format names as \"Firstname Lastname\".
+If last-first format names as \"Lastname, Firstname\".
+If `bbdb-mail-name' returns the full name as a single string, this takes
+precedence over `bbdb-mail-name-format'.  Likewise, if the mail address itself
+includes a name, this is not reformatted."
+  :group 'bbdb-sendmail
+  :type '(choice (const :tag "Firstname Lastname" first-last)
+                 (const :tag "Lastname, Firstname" last-first)))
+
+(defcustom bbdb-mail-name 'mail-name
+  "Xfield holding the full name for a record when sending mail.
+This may also be a function taking one argument, a record.
+If it returns the full mail name as a single string, this is used \"as is\".
+If it returns a cons pair (FIRST . LAST) with the first and last name
+for this record, these are formatted obeying `bbdb-mail-name-format'."
+  :group 'bbdb-sendmail
+  :type '(choice (symbol :tag "xfield")
+                 (function :tag "mail name function")))
 
 (defcustom bbdb-mail-alias-field 'mail-alias
   "Xfield holding the mail alias for a record.
@@ -1428,6 +1524,9 @@ to make the call."
   "Face used for BBDB names."
   :group 'bbdb-faces)
 
+;; KEY needs to match the value of the xfield name-face, which is a string.
+;; To avoid confusion, we make KEY a string, too, though symbols might be
+;; faster.
 (defcustom bbdb-name-face-alist nil
   "Alist used for font-locking the name of a record.
 Each element should be a cons cell (KEY . FACE) with string KEY and face FACE.
@@ -1508,7 +1607,9 @@ Calls of `bbdb-change-hook' are suppressed when this is non-nil.")
      (progn (message "BBDB: sendmail insinuation deprecated. Use mail.")
             (add-hook 'mail-setup-hook 'bbdb-insinuate-mail)))
     (message                    ; the gnus mail user agent
-     (add-hook 'message-setup-hook 'bbdb-insinuate-message)))
+     (add-hook 'message-setup-hook 'bbdb-insinuate-message))
+    (sc                         ; supercite
+     (add-hook 'sc-load-hook 'bbdb-insinuate-sc)))
   "Alist mapping features to insinuation forms.")
 
 (defvar bbdb-search-invert nil
@@ -1533,7 +1634,8 @@ and its elements are (RECORD DISPLAY-FORMAT MARKER-POS).")
 (make-variable-buffer-local 'bbdb-records)
 
 (defvar bbdb-changed-records nil
-  "List of records that has been changed since BBDB was last saved.")
+  "List of records that has been changed since BBDB was last saved.
+Use `bbdb-search-changed' to display these records.")
 
 (defvar bbdb-end-marker nil
   "Marker holding the buffer position of the end of the last record.")
@@ -1543,13 +1645,13 @@ and its elements are (RECORD DISPLAY-FORMAT MARKER-POS).")
 (defvar bbdb-hashtable (make-vector 127 0)
   "Hash table for BBDB records.
 Hashes the fields first-last-name, last-first-name, organization, aka,
-and mail.")
+and mail.  In elisp lingo, this is really an obarray.")
 
 (defvar bbdb-xfield-label-list nil
   "List of labels for xfields.")
 
-(defvar bbdb-modified nil
-  "Non-nil if the database has been modified.")
+(defvar bbdb-organization-list nil
+  "List of organizations known to BBDB.")
 
 (defvar bbdb-modeline-info (make-vector 4 nil)
   "Precalculated mode line info for BBDB commands.
@@ -2156,7 +2258,8 @@ If VALUE is nil, remove xfield LABEL from RECORD.  Return VALUE."
   (if (memq label '(name firstname lastname affix organization
                          mail aka phone address xfields))
       (error "xfield label `%s' illegal" label))
-  (bbdb-set-xfield-labels label)
+  (unless (memq label bbdb-xfield-label-list)
+    (push label bbdb-xfield-label-list))
   (if (eq label 'mail-alias)
       (setq bbdb-mail-aliases-need-rebuilt 'edit))
   (if (and value (string= "" value)) (setq value nil))
@@ -2346,6 +2449,9 @@ See also `bbdb-record-field'."
                                                    value 'bbdb-string=)))
            (if check (bbdb-check-type value (bbdb-record-organization record-type) t))
            (bbdb-hash-update record (bbdb-record-organization record) value)
+           (dolist (organization value)
+             (unless (member organization bbdb-organization-list)
+               (push organization bbdb-organization-list)))
            (bbdb-record-set-organization record value))
 
           ;; AKA
@@ -2383,6 +2489,10 @@ See also `bbdb-record-field'."
            (if merge (setq value (bbdb-merge-lists (bbdb-record-phone record)
                                                    value 'equal)))
            (if check (bbdb-check-type value (bbdb-record-phone record-type) t))
+           (dolist (phone value)
+             (let ((label (bbdb-phone-label phone)))
+               (unless (member label bbdb-phone-label-list)
+                 (push label bbdb-phone-label-list))))
            (bbdb-record-set-phone record value))
 
           ;; Address
@@ -2390,6 +2500,10 @@ See also `bbdb-record-field'."
            (if merge (setq value (bbdb-merge-lists (bbdb-record-address record)
                                                    value 'equal)))
            (if check (bbdb-check-type value (bbdb-record-address record-type) t))
+           (dolist (address value)
+             (let ((label (bbdb-address-label address)))
+               (unless (member label bbdb-address-label-list)
+                 (push label bbdb-address-label-list))))
            (bbdb-record-set-address record value))
 
           ;; all xfields
@@ -2400,11 +2514,13 @@ See also `bbdb-record-field'."
                    (if (setq xfield (assq (car ov) value))
                        (setcdr xfield (bbdb-merge-xfield (car ov) (cdr xfield) (cdr ov)))
                      (setq value (append value (list ov))))))
+             (if check (bbdb-check-type new-xfields (bbdb-record-xfields record-type) t))
              (dolist (xfield (nreverse value))
                ;; Ignore junk
-               (if (and (cdr xfield) (not (string= "" (cdr xfield))))
-                   (push xfield new-xfields)))
-             (if check (bbdb-check-type new-xfields (bbdb-record-xfields record-type) t))
+               (when (and (cdr xfield) (not (string= "" (cdr xfield))))
+                 (push xfield new-xfields)
+                 (unless (memq (car xfield) bbdb-xfield-label-list)
+                   (push (car xfield) bbdb-xfield-label-list))))
              (bbdb-record-set-xfields record new-xfields)))
 
           ;; Single xfield
@@ -2485,26 +2601,22 @@ Otherwise use `bbdb-concat'.  Return nil if we have nothing to merge."
 Case is ignored.  Return name as (FIRST . LAST).
 LAST is always a string (possibly empty).  FIRST may be nil."
   (let ((case-fold-search t)
-        first last suffix)
-    ;; FIXME: This could be smarter with names of the form "Last, First"
-    (if (string-match (concat "[-,. \t/\\]+\\("
-                              (regexp-opt bbdb-lastname-suffixes)
-                              ;; suffices are complemented by optional `.'.
-                              "\\.?\\)\\W*\\'")
-                      string)
+        first suffix)
+    ;; Separate a suffix.
+    (if (string-match bbdb-lastname-suffix-re string)
         (setq suffix (concat " " (match-string 1 string))
               string (substring string 0 (match-beginning 0))))
-    (if (string-match (concat "[- \t]*\\(\\(?:\\<"
-                              (regexp-opt bbdb-lastname-prefixes)
-                              ;; multiple last names concatenated by `-'
-                              "[- \t]+\\)?\\(?:\\w+[ \t]*-[ \t]*\\)*\\w+\\)\\'")
-                      string)
-        (progn
-          (setq last (match-string 1 string))
-          (unless (zerop (match-beginning 0))
-            (setq first (substring string 0 (match-beginning 0)))))
-      (setq last (bbdb-string-trim string))) ; strange case
-    (cons first (concat last suffix))))
+    (cond ((string-match "\\`\\(.+\\),[ \t\n]*\\(.+\\)\\'" string)
+           ;; If STRING contains a comma, this probably means that STRING
+           ;; is of the form "Last, First".
+           (setq first (match-string 2 string)
+                 string (match-string 1 string)))
+          ((string-match bbdb-lastname-re string)
+           (setq first (and (not (zerop (match-beginning 0)))
+                            (substring string 0 (match-beginning 0)))
+                 string (match-string 1 string))))
+    (cons (and first (bbdb-string-trim first))
+          (bbdb-string-trim (concat string suffix)))))
 
 (defun bbdb-parse-postcode (string)
   "Check whether STRING is a legal postcode.
@@ -2554,17 +2666,6 @@ Do this only if `bbdb-check-postcode' is non-nil."
          (error (ding)
                 (message "Error: %s" (nth 1 --c--))
                 (sit-for 2))))))
-
-;;; Completion on labels data
-
-(defun bbdb-label-completion-list (field)
-  "Figure out a completion list for the specified FIELD label.
-This evaluates the variable bbdb-FIELD-label-list, such
-as `bbdb-phone-label-list'."
-  (let ((sym (intern-soft (format "bbdb-%s-label-list" field))))
-    (if (boundp sym)
-        (symbol-value sym)
-      bbdb-default-label-list)))
 
 
 ;;; Reading and Writing the BBDB
@@ -2628,8 +2729,7 @@ copy it to `bbdb-file'."
         (add-hook 'after-save-hook hook nil t))
 
       (setq bbdb-end-marker nil
-            bbdb-changed-records nil
-            bbdb-modified nil)
+            bbdb-changed-records nil)
 
       (fillarray bbdb-hashtable 0)
       (setq bbdb-mail-aliases-need-rebuilt 'parse)
@@ -2763,10 +2863,11 @@ If `bbdb-file' uses an outdated format, it is migrated to `bbdb-file-format'."
         ;; Migrate if `bbdb-file' is outdated.
         (if migrate (setq records (bbdb-migrate records file-format)))
 
+        ;; We could first set `bbdb-phone-label-list' and
+        ;; `bbdb-address-label-list' to their customized values.  Bother?
         (setq bbdb-records records
-              bbdb-phone-label-list (bbdb-label-completion-list 'phone)
-              bbdb-address-label-list (bbdb-label-completion-list 'address)
-              bbdb-xfield-label-list nil)
+              bbdb-xfield-label-list nil
+              bbdb-organization-list nil)
 
         (bbdb-goto-first-record)
         (let (label)
@@ -2782,7 +2883,7 @@ If `bbdb-file' uses an outdated format, it is migrated to `bbdb-file-format'."
              (point-marker))
             (forward-line 1)
 
-            ;; Set the label completion lists
+            ;; Set the completion lists
             (dolist (phone (bbdb-record-phone record))
               (unless (member (setq label (bbdb-phone-label phone))
                               bbdb-phone-label-list)
@@ -2794,6 +2895,9 @@ If `bbdb-file' uses an outdated format, it is migrated to `bbdb-file-format'."
             (dolist (xfield (bbdb-record-xfields record))
               (unless (memq (setq label (car xfield)) bbdb-xfield-label-list)
                 (push label bbdb-xfield-label-list)))
+            (dolist (organization (bbdb-record-organization record))
+              (unless (member organization bbdb-organization-list)
+                (push organization bbdb-organization-list)))
 
             (let ((name (bbdb-concat 'name-first-last
                                      (bbdb-record-firstname record)
@@ -2818,7 +2922,11 @@ If `bbdb-file' uses an outdated format, it is migrated to `bbdb-file-format'."
             ;; `bbdb-allow-duplicates' is nil.
             (bbdb-hash-record record)))
 
-        ;; We should hide only those fields that are handled automatically.
+        ;; We should remove those xfields from `bbdb-xfield-label-list'
+        ;; that are handled automatically.  Yet those xfields that are
+        ;; omitted in multiline layout are generally a superset of the
+        ;; fields that are handled automatically.  So the following is
+        ;; not a satisfactory solution.
         ;; (dolist (label (bbdb-layout-get-option 'multi-line 'omit))
         ;;   (setq bbdb-xfield-label-list (delq label bbdb-xfield-label-list)))
 
@@ -2849,8 +2957,7 @@ If `bbdb-file' uses an outdated format, it is migrated to `bbdb-file-format'."
 
 (defun bbdb-after-save ()
   "Run after saving `bbdb-file' as buffer-local part of `after-save-hook'."
-  (setq bbdb-modified nil
-        bbdb-changed-records nil)
+  (setq bbdb-changed-records nil)
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
       (if (eq major-mode 'bbdb-mode)
@@ -2895,24 +3002,24 @@ about updating the name hash-table.  If NEW is t treat RECORD as new."
 With REMHASH non-nil, also remove RECORD from the hash table."
   (unless (bbdb-record-marker record) (error "BBDB: marker absent"))
   (bbdb-with-db-buffer
-    (let ((tail (memq record bbdb-records)))
+    (let ((tail (memq record bbdb-records))
+          (inhibit-quit t))
       (unless tail (error "BBDB record absent: %s" record))
       (delete-region (bbdb-record-marker record)
                      (if (cdr tail)
                          (bbdb-record-marker (car (cdr tail)))
-                       bbdb-end-marker)))
-    (setq bbdb-records (delq record bbdb-records))
-    (when remhash
-      (bbdb-remhash (bbdb-record-name record) record)
-      (bbdb-remhash (bbdb-record-name-lf record) record)
-      (dolist (organization (bbdb-record-organization record))
-        (bbdb-remhash organization record))
-      (dolist (mail (bbdb-record-mail-canon record))
-        (bbdb-remhash mail record))
-      (dolist (aka (bbdb-record-field record 'aka-all))
-        (bbdb-remhash aka record)))
-    (bbdb-record-set-sortkey record nil)
-    (setq bbdb-modified t)))
+                       bbdb-end-marker))
+      (setq bbdb-records (delq record bbdb-records))
+      (when remhash
+        (bbdb-remhash (bbdb-record-name record) record)
+        (bbdb-remhash (bbdb-record-name-lf record) record)
+        (dolist (organization (bbdb-record-organization record))
+          (bbdb-remhash organization record))
+        (dolist (mail (bbdb-record-mail-canon record))
+          (bbdb-remhash mail record))
+        (dolist (aka (bbdb-record-field record 'aka-all))
+          (bbdb-remhash aka record))))
+    (bbdb-record-set-sortkey record nil)))
 
 ;; inspired by `gnus-bind-print-variables'
 (defmacro bbdb-with-print-loadably (&rest body)
@@ -2959,7 +3066,8 @@ that calls the hooks, too."
     ;; written to the file.)  After writing, put the cache back and update
     ;; the cache's marker.
     (let ((cache (bbdb-record-cache record))
-          (point (point)))
+          (point (point))
+          (inhibit-quit t))
       (bbdb-debug
         (if (= point (point-min))
             (error "Inserting at point-min (%s)" point))
@@ -2971,7 +3079,6 @@ that calls the hooks, too."
        (bbdb-with-print-loadably (prin1-to-string record)) "\n")
       (set-marker (bbdb-cache-marker cache) point)
       (bbdb-record-set-cache record cache))
-    (setq bbdb-modified t)
     record))
 
 (defun bbdb-overwrite-record-internal (record)
@@ -2981,7 +3088,8 @@ that calls the hooks, too."
   (bbdb-with-db-buffer
     (let* ((tail (memq record bbdb-records))
            (_ (unless tail (error "BBDB record absent: %s" record)))
-           (cache (bbdb-record-cache record)))
+           (cache (bbdb-record-cache record))
+           (inhibit-quit t))
       (bbdb-debug
         (if (<= (bbdb-cache-marker cache) (point-min))
             (error "Cache marker is %s" (bbdb-cache-marker cache))))
@@ -3006,19 +3114,7 @@ that calls the hooks, too."
                 (bbdb-record-marker record))
             (error "Overwrite failed")))
 
-      (setq bbdb-modified t)
       record)))
-
-(defun bbdb-set-xfield-labels (newval)
-  "Set `bbdb-xfield-label-list'.
-If NEWVAL is a symbol, add it to `bbdb-xfield-label-list' if not yet present.
-If NEWVAL is a list, it replaces the current value of `bbdb-xfield-label-list'."
-  (cond ((listp newval)
-         (setq bbdb-xfield-label-list newval))
-        ((and (symbolp newval)
-              (not (memq newval bbdb-xfield-label-list)))
-         (push newval bbdb-xfield-label-list)))
-  bbdb-xfield-label-list)
 
 ;; Record formatting:
 ;; This does not insert anything into the *BBDB* buffer,
@@ -3742,8 +3838,11 @@ There are numerous hooks.  M-x apropos ^bbdb.*hook RET
                               (bbdb-concat " " (elt bbdb-modeline-info 0)
                                            (elt bbdb-modeline-info 1)))))
         mode-line-modified
-        '(bbdb-read-only (bbdb-modified "%*" "%%")
-                         (bbdb-modified "**" "--")))
+        ;; For the mode-line we want to be fast. So we skip the checks
+        ;; performed by `bbdb-with-db-buffer'.
+        '(:eval (if (buffer-modified-p bbdb-buffer)
+                    (if bbdb-read-only "%*" "**")
+                  (if bbdb-read-only "%%" "--"))))
   ;; `bbdb-revert-buffer' acts on `bbdb-buffer'.  Yet this command is usually
   ;; called from the *BBDB* buffer.
   (set (make-local-variable 'revert-buffer-function)
@@ -3965,7 +4064,6 @@ however, after having used other programs to add records to the BBDB."
             (bbdb-with-print-loadably (prin1 record buf))
             (bbdb-record-set-cache record cache)
             (insert ?\n)))
-        (setq bbdb-modified t)
         (message "BBDB was mis-sorted; fixing...done")))))
 
 
@@ -3981,6 +4079,10 @@ to initialize the respective mail/news readers and composers:
   vm         VM mail reader.
   mail       Mail (M-x mail).
   message    Message mode.
+
+Initialization of miscellaneous packages:
+  sc         Supercite.
+
 See also `bbdb-mua-auto-update-init'.  The latter is a separate function
 as this allows one to initialize the auto update feature for some MUAs only,
 for example only for outgoing messages."
