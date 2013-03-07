@@ -1928,8 +1928,8 @@ Adds an xfield `creation-date' for RECORD which is the current time string."
 (defun bbdb-add-uuid (record)
   "For use as a `bbdb-create-hook'.
 Adds a notes-field `bbdb-id' which will be a unique ID for the entry."
-  (bbdb-record-set-note record 'bbdb-id 
-                       (bbdb-genuuid)))
+  (bbdb-record-set-xfield record 'bbdb-id
+			  (bbdb-genuuid)))
 
 (defun bbdb-multiple-buffers-default ()
   "Default function for guessing a name for new *BBDB* buffers.
