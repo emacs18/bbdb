@@ -1,7 +1,7 @@
 ;;; bbdb-mua.el --- various MUA functionality for BBDB
 
 ;; Copyright (C) 1991, 1992, 1993 Jamie Zawinski <jwz@netscape.com>.
-;; Copyright (C) 2010-2012 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2013 Roland Winkler <winkler@gnu.org>
 
 ;; This file is part of the Insidious Big Brother Database (aka BBDB),
 
@@ -893,11 +893,12 @@ For use as an element of `bbdb-notice-mail-hook'."
   (if mail
       (if (functionp bbdb-canonicalize-mail-function)
           (funcall bbdb-canonicalize-mail-function mail)
-        mail)))
+        ;; Minimalistic clean-up
+        (bbdb-string-trim mail))))
 
 (defcustom bbdb-canonical-hosts
   ;; Example
-  (mapconcat 'regexp-quote '("cs.cmu.edu" "ri.cmu.edu") "\\|")
+  (regexp-opt '("cs.cmu.edu" "ri.cmu.edu"))
   "Regexp matching the canonical part of the domain part of a mail address.
 If the domain part of a mail address matches this regexp, the domain
 is replaced by the substring that actually matched this address.
@@ -914,6 +915,7 @@ Used by  `bbdb-canonicalize-mail-1'"
 ;;;###autoload
 (defun bbdb-canonicalize-mail-1 (address)
   "Example of `bbdb-canonicalize-mail-function'."
+  (setq address (bbdb-string-trim address))
   (cond
    ;;
    ;; rewrite mail-drop hosts.
@@ -1023,29 +1025,96 @@ This strips garbage from the user full NAME string."
   ;; Remove leading non-alpha chars
   (if (string-match "\\`[^[:alpha:]]+" name)
       (setq name (substring name (match-end 0))))
+
+  (if (string-match "^\\([^@]+\\)@" name)
+      ;; The name is really a mail address and we use the part preceeding "@".
+      ;; Everything following "@" is ignored.
+      (setq name (match-string 1 name)))
+
+  ;; Replace "firstname.surname" by "firstname surname".
+  ;; Do not replace ". " with " " because that could be an initial.
+  (setq name (replace-regexp-in-string "\\.\\([^ ]\\)" " \\1" name))
+
+  ;; Replace tabs, spaces, and underscores with a single space.
+  (setq name (replace-regexp-in-string "[ \t\n_]+" " " name))
+
+  ;; Remove trailing comments separated by "(" or " [-#]"
+  ;; This does not work all the time because some of our friends in
+  ;; northern europe have brackets in their names...
+  (if (string-match "[^ \t]\\([ \t]*\\((\\| [-#]\\)\\)" name)
+      (setq name (substring name 0 (match-beginning 1))))
+
+  ;; Remove phone extensions (like "x1234" and "ext. 1234")
+  (let ((case-fold-search t))
+    (setq name (replace-regexp-in-string
+                "\\W+\\(x\\|ext\\.?\\)\\W*[-0-9]+" "" name)))
+
   ;; Remove trailing non-alpha chars
   (if (string-match "[^[:alpha:]]+\\'" name)
       (setq name (substring name 0 (match-beginning 0))))
 
-  (if (string-match "^[^@]+" name)
-      ;; The name is really a mail address and we use the part preceeding "@".
-      ;; Replace "firstname.surname" by "firstname surname".
-      ;; Do not replace ". " with " " because that could be an initial.
-      (setq name (replace-regexp-in-string "[._]\\([^ ]\\)" " \\1"
-                                           (match-string 0 name)))
+  ;; Remove text properties
+  (substring-no-properties name))
 
-    ;; Replace tabs, spaces, and underscores with a single space.
-    (setq name (replace-regexp-in-string "[ \t\n_]+" " " name))
-    ;; Remove phone extensions (like "x1234" and "ext. 1234")
-    ;; This does not work all the time because some of our friends in
-    ;; northern europe have brackets in their names...
-    (let ((case-fold-search t))
-      (setq name (replace-regexp-in-string
-                  "\\W+\\(x\\|ext\\.?\\)\\W*[-0-9]+" "" name)))
-    ;; Remove trailing parenthesized comments
-    (when (string-match "[^ \t]\\([ \t]*\\((\\| -\\| #\\)\\)" name)
-      (setq name (substring name 0 (match-beginning 1)))))
+;;; Mark BBDB records in the MUA summary buffer
 
-  name)
+(defun bbdb-mua-summary-unify (address)
+  "Unify mail ADDRESS displayed for a message in the MUA Summary buffer.
+Typically ADDRESS refers to the value of the From header of a message.
+If ADDRESS matches a record in BBDB display a unified name instead of ADDRESS
+in the MUA Summary buffer.
+
+Unification uses `bbdb-mua-summary-unification-list' (see there).
+The first match in this list becomes the text string displayed
+for a message in the MUA Summary buffer instead of ADDRESS.
+If variable `bbdb-mua-summary-mark' is non-nil use it to precede known addresses.
+Return the unified mail address.
+
+Currently this works with Gnus and VM.  It requires the BBDB insinuation
+of these MUAs.  Also, the MUA Summary format string must use
+`bbdb-mua-summary-unify-format-letter' (see there)."
+  ;; ADDRESS is analyzed as in `bbdb-get-address-components'.
+  (let* ((data (mail-extract-address-components address))
+         (name (and (car data)
+                    (funcall bbdb-message-clean-name-function (car data))))
+         (mail (bbdb-canonicalize-mail (cadr data))) ; may be nil
+         (record (and (or name mail)
+                      (car (bbdb-message-search name mail))))
+         (u-list bbdb-mua-summary-unification-list)
+         elt val)
+    (while (setq elt (pop u-list))
+      (setq val (cond ((eq elt 'message-name) name)
+                      ((eq elt 'message-mail) mail)
+                      ((eq elt 'message-address) address)
+                      (record (let ((result (bbdb-record-field record elt)))
+                                (if (stringp result) result
+                                  (car result)))))) ; RESULT is list.
+      (if val (setq u-list nil)))
+    (format "%s%s"
+            (cond ((not bbdb-mua-summary-mark) "")
+                  ((not record) " ")
+                  ((bbdb-record-xfield record bbdb-mua-summary-mark-field))
+                  (t bbdb-mua-summary-mark))
+            (or val name mail address "**UNKNOWN**"))))
+
+(defun bbdb-mua-summary-mark (address)
+  "In the MUA Summary buffer mark messages matching a BBDB record.
+ADDRESS typically refers to the value of the From header of a message.
+If ADDRESS matches a record in BBDB return a mark, \" \" otherwise.
+The mark itself is the value of the xfield `bbdb-mua-summary-mark-field'
+if this xfield is in the poster's record, and `bbdb-mua-summary-mark' otherwise."
+  (if (not bbdb-mua-summary-mark)
+      "" ; for consistency
+    ;; ADDRESS is analyzed as in `bbdb-get-address-components'.
+    (let* ((data (mail-extract-address-components address))
+           (name (and (car data)
+                      (funcall bbdb-message-clean-name-function (car data))))
+           (mail (bbdb-canonicalize-mail (cadr data))) ; may be nil
+           (record (and (or name mail)
+                        (car (bbdb-message-search name mail)))))
+      (if record
+          (or (bbdb-record-xfield record bbdb-mua-summary-mark-field)
+              bbdb-mua-summary-mark)
+        " "))))
 
 (provide 'bbdb-mua)

@@ -1,3 +1,144 @@
+2013-02-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-mail-name-format, bbdb-mail-name): New
+	user variables.
+	* lisp/bbdb-com.el (bbdb-dwim-mail): Use them.  Always quote the
+	name part of a mail address if necessary.
+	(bbdb-quoted-string-syntax-table): New internal variable.
+	(bbdb-complete-mail): Use it to find starting point for
+	completion.  Before proper cycling, reformat the original mail
+	address to match an element of dwim-completions.  Use
+	completion-ignore-case instead of downcase.  Do not use trimmed
+	pattern.  Issue warning message if attempting to create a
+	*Completions* buffer with GNU Emacs older than 23.2.  Use the
+	default value of completion-list-insert-choice-function to locally
+	bind this variable.
+	(bbdb-complete-mail-cleanup): New arg beg.  Use indent-relative.
+
+	* lisp/bbdb-print.el (bbdb-print-name-format, bbdb-print-name):
+	New user variables.
+	(bbdb-print-record): Use them,
+
+2013-02-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-mail-yank): Bind case-fold-search to t.
+
+2013-02-15  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-delete-field-or-record): Handle multiple
+	records.
+
+2013-02-15  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-delete-record-internal)
+	(bbdb-insert-record-internal, bbdb-overwrite-record-internal): Use
+	inhibit-quit.
+
+2013-02-15  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-changed-records, bbdb-hashtable): Doc fix.
+
+2013-02-15  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-modified): Removed.
+	(bbdb-buffer, bbdb-after-save, bbdb-delete-record-internal)
+	(bbdb-insert-record-internal, bbdb-overwrite-record-internal)
+	(bbdb-sort-records): Do not set bbdb-modified.
+	(bbdb-mode): Use buffer-modified-p.
+
+2013-02-02  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-mail-user-agent): Use non-nil default taken
+	from mail-user-agent.
+	(bbdb-lastname-re, bbdb-lastname-suffix-re): New user variables.
+	(bbdb-divide-name): Use them.  Pass first and last name through
+	bbdb-string-trim.
+
+	* lisp/bbdb-mua.el (bbdb-canonicalize-mail): Always pass mail
+	through bbdb-string-trim.
+	(bbdb-canonicalize-mail-1): Always pass mail through
+	bbdb-string-trim.
+	(bbdb-canonical-hosts): Use regxp-opt instead of regexp-quote.
+	(bbdb-message-clean-name-default): Re-arrange clean-up steps.  Use
+	substring-no-properties.
+
+2013-01-20  Roland Winkler  <winkler@gnu.org>
+	* aclocal.m4: Do not throw an error if tex_dir does not exist.
+
+2013-01-20  Roland Winkler  <winkler@gnu.org>
+	* doc/Makefile.in, tex/Makefile.in: Provide the DESTDIR variable.
+	(Bug#38124)
+
+2013-01-13  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-parse-records): Set bbdb-xfield-labels-list
+	and bbdb-organization-list to nil only once.
+
+2013-01-13  Roland Winkler  <winkler@gnu.org>
+	Update copyright year in all files.
+
+2013-01-13  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-organization-list): New variable.
+	(bbdb-record-set-field): Use it.  Update bbdb-phone-label-list,
+	bbdb-address-label-list, and bbdb-xfield-label-list.
+	((bbdb-set-xfield-labels): Removed
+	(bbdb-record-set-xfield): Set bbdb-xfield-labels-list explicitly.
+	(bbdb-label-completion-list): Removed.
+	(bbdb-parse-records): Do not set bbdb-phone-label-list and
+	bbdb-address-label-list in a circular way.  Set
+	bbdb-organization-list.
+
+	* lisp/bbdb-com.el: Require crm.
+	(bbdb-crm-local-completion-map): New variable.
+	(bbdb-read-organization): New function.
+	(bbdb-read-record, bbdb-prompt-for-new-field): Use it. Directly
+	use bbdb-phone-label-list and bbdb-address-label-list.
+	Do not call bbdb-set-xfield-labels, which was redundant.
+	(bbdb-edit-field): Use bbdb-read-organization and
+	bbdb-record-field.
+	(bbdb-record-edit-address): Use bbdb-address-label-list directly.
+	(bbdb-record-edit-phone): Use bbdb-phone-label-list directly.
+
+2012-12-30  Roland Winkler  <winkler@gnu.org>
+	* configure.ac: Option --with-tex-dir renamed from
+	--with-texmf-dir.
+
+2012-12-30  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-sc.el: New file
+	* lisp/Makefile.in, lisp/makefile-temp, lisp/bbdb.el
+	(bbdb-init-forms, bbdb-initialize): Use it.
+
+2012-12-30  Roland Winkler  <winkler@gnu.org>
+	* INSTALL: List all BBDB configure options.
+	* aclocal.m4, tex/Makefile.in: Option --with-tex-dir renamed from
+	--with-texmf-dir.
+
+2012-12-30  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-gnus.el: Do not use eval-and-compile.
+	(bbdb/gnus-split-myaddr-regexp): Do not use obsolete variable
+	gnus-local-domain.
+	(bbdb/gnus-split-private-field, bbdb/gnus-split-public-field): Fix
+	docstring.
+
+	* lisp/bbdb-vm.el, lisp/bbdb-message.el, lisp/bbdb-mhe.el: Do not
+	use eval-and-compile.
+
+2012-12-30  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-mua-summary-unification-list)
+	(bbdb-mua-summary-mark-field, bbdb-mua-summary-mark)
+	(bbdb-mua-summary-unify-format-letter)
+	(bbdb-mua-summary-mark-format-letter): New user variables.
+
+	* lisp/bbdb-mua.el (bbdb-mua-summary-unify)
+	(bbdb-mua-summary-mark): New functions.
+
+	* lisp/bbdb-gnus.el (bbdb/gnus-summary-mark-known-posters)
+	(bbdb/gnus-mark-known-posters)
+	(bbdb/gnus-summary-known-poster-mark)
+	(bbdb/gnus-summary-show-bbdb-names)
+	(bbdb/gnus-header-show-bbdb-names)
+	(bbdb/gnus-summary-prefer-bbdb-data)
+	(bbdb/gnus-summary-prefer-real-names)
+	(bbdb/gnus-header-prefer-real-names)
+	(bbdb/gnus-summary-user-format-letter)
+	(bbdb/gnus-summary-in-bbdb-format-letter)
+	(bbdb/gnus-message-marker-field, bbdb/gnus-summary-get-sender)
+	(bbdb/gnus-summary-sender-in-bbdb): Removed.
+	(bbdb-insinuate-gnus): Use bbdb-mua-summary-unify and
+	bbdb-mua-summary-mark.
+
 2012-12-27  Roland Winkler  <winkler@gnu.org>
 	* lisp/bbdb-mua.el (bbdb-mua-wrapper): Add edebug support.
 	Suggested by Leo <sdl.web@gmail.com>.
@@ -1212,7 +1353,7 @@
 ;; coding: utf-8
 ;; End:
 
-  Copyright (C) 2010-2012 Roland Winkler <winkler@gnu.org>
+  Copyright (C) 2010-2013 Roland Winkler <winkler@gnu.org>
 
   This file is part of the Insidious Big Brother Database (aka BBDB),
 
