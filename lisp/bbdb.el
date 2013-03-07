@@ -48,6 +48,7 @@
   (autoload 'bbdb-completing-read-records "bbdb-com")
   (autoload 'bbdb-search "bbdb-com")
   (autoload 'bbdb-search-prompt "bbdb-com")
+  (autoload 'bbdb-genuuid "bbdb-uuid")
   (autoload 'mail-position-on-field "sendmail")
   (autoload 'vm-select-folder-buffer "vm-folder")
 
@@ -2670,6 +2671,7 @@ Do this only if `bbdb-check-postcode' is non-nil."
 
 ;;; Reading and Writing the BBDB
 
+;;;###autoload
 (defun bbdb-buffer ()
   "Return buffer that visits the BBDB file `bbdb-file'.
 If `bbdb-file-remote' is non-nil and it is newer than `bbdb-file',
