@@ -24,6 +24,10 @@
 
 (require 'bbdb)
 
+;; When running BBDB, we have (require 'bbdb-autoloads)
+(eval-when-compile              ; pacify the compiler.
+  (autoload 'bbdb-genuuid "bbdb-uuid"))
+
 ;;; Migrating the BBDB
 
 ;; Unused
