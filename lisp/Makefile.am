@@ -7,8 +7,8 @@ emacs = LC_ALL=C $(EMACS) $(EMACSOPT)
 PUSHPATH = -eval '(push "./" load-path)'
 
 el_files_std = bbdb.el bbdb-com.el bbdb-print.el bbdb-anniv.el		\
-	   bbdb-migrate.el bbdb-mua.el bbdb-message.el bbdb-rmail.el	\
-	   bbdb-gnus.el bbdb-mhe.el bbdb-uuid.el
+	   bbdb-migrate.el bbdb-snarf.el bbdb-mua.el bbdb-message.el	\
+	   bbdb-rmail.el bbdb-gnus.el bbdb-mhe.el bbdb-uuid.el
 
 el_files_ver = bbdb-version.el
 
@@ -44,9 +44,9 @@ bbdb-loaddefs.el: $(el_files)
 
 bbdb.elc: bbdb-version.elc
 
-bbdb-com.elc bbdb-migrate.elc bbdb-anniv.elc bbdb-ispell.elc		\
-bbdb-mua.elc bbdb-print.elc bbdb-rmail.elc bbdb-gnus.elc bbdb-mhe.elc:	\
-bbdb.elc bbdb-version.elc
+bbdb-com.elc bbdb-migrate.elc bbdb-snarf.elc bbdb-anniv.elc	\
+bbdb-ispell.elc bbdb-mua.elc bbdb-print.elc bbdb-rmail.elc	\
+bbdb-gnus.elc bbdb-mhe.elc: bbdb.elc bbdb-version.elc
 
 bbdb-mua.elc bbdb-print.elc bbdb-rmail.elc bbdb-gnus.elc bbdb-mhe.elc:	\
 bbdb-com.elc

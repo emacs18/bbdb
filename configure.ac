@@ -24,7 +24,7 @@ dnl Process this file with autoconf to produce a new configure script
 
 AC_PREREQ([2.64])
 
-AC_INIT([bbdb],[3.02.2013.02.16],[bbdb-info@lists.sourceforge.net],[],[http://savannah.nongnu.org/projects/bbdb/])
+AC_INIT([bbdb],[3.02.2013.04.13],[bbdb-info@lists.sourceforge.net],[],[http://savannah.nongnu.org/projects/bbdb/])
 
 AC_COPYRIGHT([Copyright (C) 2000-2001 Didier Verna <didier@xemacs.org>.
 Copyright (C) 2011-2013 Roland Winkler <winkler@gnu.org>.])

@@ -128,6 +128,11 @@
   :group 'bbdb-utilities)
 (put 'bbdb-utilities-ispell 'custom-loads '(bbdb-ispell))
 
+(defgroup bbdb-utilities-snarf nil
+  "Customizations for BBDB snarf"
+  :group 'bbdb-utilities)
+(put 'bbdb-utilities-snarf 'custom-loads '(bbdb-snarf))
+
 ;;; Customizable variables
 (defcustom bbdb-file "~/.bbdb"
   "The name of the Insidious Big Brother Database file."
@@ -960,7 +965,7 @@ See also `bbdb-new-mails-primary'."
                  (function :tag "Function for analyzing name handling")
                  (regexp :tag "If the new address matches this regexp ignore it.")))
 
-(defcustom bbdb-new-mails-primary nil
+(defcustom bbdb-new-mails-primary 'query
   "Where to put new mail addresses for existing BBDB records.
 A new mail address may either become the new primary mail address,
 when it is put at the beginning of the list of mail addresses.
@@ -1302,7 +1307,8 @@ or if some FIELD of RECORD is empty."
 
 (defcustom bbdb-mua-summary-mark-field 'mark-char
   "BBDB xfield whose value is used to mark message addresses known to BBDB.
-See `bbdb-mua-summary-mark' and `bbdb-mua-summary-unify'.
+This may also be a function, called with one arg, the record, which should
+return the mark.  See `bbdb-mua-summary-mark' and `bbdb-mua-summary-unify'.
 See also `bbdb-mua-summary-mark'."
   :group 'bbdb-mua-gnus
   :type 'symbol)
@@ -1967,6 +1973,42 @@ Used with return values of `bbdb-add-job'."
       (and (eq spec 'query)
            (or bbdb-silent (y-or-n-p prompt)))))
 
+;; Inspired by `gnus-extract-address-components' from gnus-utils.
+(defun bbdb-extract-address-components (mail)
+  "Given an RFC-822 address MAIL, extract full name and canonical address.
+Return a list of the form (FULL-NAME CANONICAL-ADDRESS).
+If no name can be extracted, FULL-NAME will be nil.
+
+For an address `<Joe_Smith@foo.com>' the more sophisticated function
+`mail-extract-address-components' returns the name \"Joe Smith\".
+This is useful when analyzing the headers of email messages we receive
+from the outside world.  Yet when analyzing the mail addresses stored
+in BBDB, this pollutes the mail-aka space.  So we define here
+an intentionally much simpler function for extracting the names
+and canonical addresses in the mail field of BBDB records."
+  (let (name address)
+    ;; First find the address - the thing with the @ in it.
+    (cond (;; Check `<foo@bar>' first in order to handle the quite common
+	   ;; form `"abc@xyz" <foo@bar>' (i.e. `@' as part of a comment)
+	   ;; correctly.
+	   (string-match "<\\([^@ \t<>]+[!@][^@ \t<>]+\\)>" mail)
+	   (setq address (match-string 1 mail)))
+	  ((string-match "\\b[^@ \t<>]+[!@][^@ \t<>]+\\b" mail)
+	   (setq address (match-string 0 mail))))
+    ;; Then check whether the `name <address>' format is used.
+    (and address
+	 ;; Linear white space is not required.
+	 (string-match (concat "[ \t]*<" (regexp-quote address) ">") mail)
+	 (setq name (substring mail 0 (match-beginning 0)))
+         ;; Strip any quotes mail the name.
+         (string-match "^\".*\"$" name)
+         (setq name (substring name 1 (1- (match-end 0)))))
+    ;; If not, then check whether the `address (name)' format is used.
+    (or name
+	(and (string-match "(\\([^)]+\\))" mail)
+	     (setq name (match-string 1 mail))))
+    (list (if (equal name "") nil name) (or address mail))))
+
 ;; BBDB data structure
 (defmacro bbdb-defstruct (name &rest elts)
   "Define two functions to operate on vector NAME for each symbol ELT in ELTS.
@@ -2110,7 +2152,9 @@ KEY must be a string or nil.  Empty strings and nil are ignored."
                 (unintern sym bbdb-hashtable)))))))
 
 (defun bbdb-hash-record (record)
-  "Insert RECORD in `bbdb-hashtable'."
+  "Insert RECORD in `bbdb-hashtable'.
+This performs all initializations required for a new record.
+Do not call this for existing records that require updating."
   (bbdb-puthash (bbdb-record-name record) record)
   (bbdb-puthash (bbdb-record-name-lf record) record)
   (dolist (organization (bbdb-record-organization record))
@@ -2123,11 +2167,7 @@ KEY must be a string or nil.  Empty strings and nil are ignored."
   "For RECORD put mail into `bbdb-hashtable'."
   (let (mail-aka mail-canon address)
     (dolist (mail (bbdb-record-mail record))
-      (setq address (mail-extract-address-components mail))
-      ;; For an address <Joe_Smith@foo.com> this returns
-      ;; the name "Joe Smith".  Thus if <Joe_Smith@foo.com>
-      ;; is a mail address in the record of "John Smith"
-      ;; we get the mail-aka "Joe Smith".  Bother?
+      (setq address (bbdb-extract-address-components mail))
       (when (car address)
         (push (car address) mail-aka)
         (bbdb-puthash (car address) record))
@@ -2967,8 +3007,10 @@ If `bbdb-file' uses an outdated format, it is migrated to `bbdb-file-format'."
 
 (defun bbdb-change-record (record &optional need-to-sort new)
   "Update the database after a change of RECORD.
-NEED-TO-SORT is t when the name has changed.  You still need to worry
-about updating the name hash-table.  If NEW is t treat RECORD as new."
+NEED-TO-SORT is t when the name has changed.
+If NEW is t treat RECORD as new.  New records are hashed.
+If a record is not new, it is the caller's responsibility
+to update the hash-table for RECORD."
   (if bbdb-read-only
       (error "The Insidious Big Brother Database is read-only."))
   (unless bbdb-notice-hook-pending
@@ -2989,11 +3031,12 @@ about updating the name hash-table.  If NEW is t treat RECORD as new."
            ;; We assume it got updated by the caller.
            (bbdb-delete-record-internal record)
            (bbdb-insert-record-internal record)))
+        ;; Mostly we do not rely on NEW to identify new records.
         ((not new)
          (error "Changes are lost."))
-        (t ;; Record is not yet in database, so add it.
+        (t ;; Record is not yet in database (whatever NEW says), so add it.
          (bbdb-insert-record-internal record)
-         (bbdb-hash-record record))) ; to be safe
+         (bbdb-hash-record record)))
   (unless (memq record bbdb-changed-records)
     (push record bbdb-changed-records))
   (run-hook-with-args 'bbdb-after-change-hook record)
@@ -3158,11 +3201,11 @@ This function is a possible formatting function for
   (let ((country (bbdb-address-country address))
         (streets (bbdb-address-streets address)))
     (concat (if streets
-                (concat (mapconcat 'identity streets "\n") "\n") "")
+                (concat (mapconcat 'identity streets "\n") "\n"))
             (bbdb-concat ", " (bbdb-address-city address)
                          (bbdb-concat " " (bbdb-address-state address)
                                       (bbdb-address-postcode address)))
-            (if (string= "" country) ""
+            (unless (or (not country) (string= "" country))
               (concat "\n" country)))))
 
 (defun bbdb-format-address (address layout)
@@ -3189,20 +3232,20 @@ The formatting rules are defined in `bbdb-address-format-list'."
                  (setq string "")
                  (dolist (form (split-string (substring format 1 -1)
                                              (substring format 0 1) t))
-                   (cond ((string-match "%s" form)
+                   (cond ((string-match "%s" form) ; street
                           (mapc (lambda (s) (setq string (concat string (format form s))))
                                 (bbdb-address-streets address)))
-                         ((string-match "%c" form)
-                          (unless (string= "" (setq str (bbdb-address-city address)))
+                         ((string-match "%c" form) ; city
+                          (unless (or (not (setq str (bbdb-address-city address))) (string= "" str))
                             (setq string (concat string (format (replace-regexp-in-string "%c" "%s" form) str)))))
-                         ((string-match "%p" form)
-                          (unless (string= ""  (setq str (bbdb-address-postcode address)))
+                         ((string-match "%p" form) ; postcode
+                          (unless (or (not (setq str (bbdb-address-postcode address))) (string= "" str))
                             (setq string (concat string (format (replace-regexp-in-string "%p" "%s" form) str)))))
-                         ((string-match "%S" form)
-                          (unless (string= ""  (setq str (bbdb-address-state address)))
+                         ((string-match "%S" form) ; state
+                          (unless (or (not (setq str (bbdb-address-state address))) (string= "" str))
                             (setq string (concat string (format (replace-regexp-in-string "%S" "%s" form t) str)))))
-                         ((string-match "%C" form)
-                          (unless (string= ""  country)
+                         ((string-match "%C" form) ; country
+                          (unless (or (not country) (string= ""  country))
                             (setq string (concat string (format (replace-regexp-in-string "%C" "%s" form t) country)))))
                          (t (error "Malformed address format element %s" form)))))
                 (t (error "Malformed address format %s" format))))))
