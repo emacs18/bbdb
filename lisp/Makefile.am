@@ -1,5 +1,5 @@
 # Command line flags for Emacs.
-EMACSOPT = --batch --no-site-file --no-init-file
+EMACSOPT = --batch --quick --directory=./
 
 # The actual Emacs command run in the targets below.
 emacs = LC_ALL=C $(EMACS) $(EMACSOPT)
@@ -55,8 +55,8 @@ bbdb-rmail.elc bbdb-gnus.elc bbdb-mhe.elc: bbdb-mua.elc
 
 # VM is not part of GNU Emacs
 if HAVE_VM
-VM = -eval '(if (not (string-match "$(VMDIR)" "")) (setq load-path (cons "$(VMDIR)" load-path)))'
-bbdb-mua.elc: EMACS_EXTRA_FLAGS = -eval '(unless (string= "$(VMDIR)" "") (push "$(VMDIR)" load-path) (load "vm" t t))'
+VM = -eval '(unless (string-match "$(VMDIR)" "") (push "$(VMDIR)" load-path))'
+bbdb-mua.elc: EMACS_EXTRA_FLAGS = -eval '(unless (string-match "$(VMDIR)" "") (push "$(VMDIR)" load-path) (load "vm" t t))'
 bbdb-vm.elc: bbdb.elc bbdb-version.elc bbdb-com.elc bbdb-mua.elc
 bbdb-vm.elc: EMACS_EXTRA_FLAGS = $(VM)
 endif

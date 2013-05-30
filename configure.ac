@@ -3,6 +3,7 @@ dnl configure.ac --- configuration setup for BBDB
 dnl Author:        Didier Verna <didier@xemacs.org>
 dnl Maintainer:    Roland Winkler <winkler@gnu.org>
 dnl Created:       Tue Nov 14 18:28:52 2000
+dnl Last Revision: $Date: 2013/05/26 17:45:59 $
 
 dnl Copyright (C) 2000-2001 Didier Verna <didier@xemacs.org>
 dnl Copyright (C) 2011-2013 Roland Winkler <winkler@gnu.org>
@@ -24,11 +25,11 @@ dnl Process this file with autoconf to produce a new configure script
 
 AC_PREREQ([2.64])
 
-AC_INIT([bbdb],[3.02.2013.04.13],[bbdb-info@lists.sourceforge.net],[],[http://savannah.nongnu.org/projects/bbdb/])
+AC_INIT([bbdb],[3.02.2013.05.26],[bbdb-info@lists.sourceforge.net],[],[http://savannah.nongnu.org/projects/bbdb/])
 
 AC_COPYRIGHT([Copyright (C) 2000-2001 Didier Verna <didier@xemacs.org>.
 Copyright (C) 2011-2013 Roland Winkler <winkler@gnu.org>.])
-AC_REVISION([$Revision: 1.15 $])
+AC_REVISION([$Revision: 1.16 $])
 
 AC_CONFIG_SRCDIR([lisp/bbdb.el])
 AC_CONFIG_MACRO_DIR([m4])
