@@ -38,6 +38,11 @@ AM_INIT_AUTOMAKE([foreign])
 
 AM_SILENT_RULES
 
+# AM_PATH_LISPDIR sets $EMACS to the emacs executable, as needed by
+# BBDB_WITH_VM, so it must come first.
+AM_PATH_LISPDIR
+AS_IF([test "$EMACS" = no], [AC_MSG_ERROR([cannot find Emacs])])
+
 BBDB_WITH_VM
 if test "$VMDIR" = no; then
   AC_MSG_WARN([VM mailer sources not found.
@@ -51,8 +56,6 @@ if test x"$texmfdir" = x; then
 fi
 AC_SUBST(texmfdir)
 AM_CONDITIONAL([HAVE_TEXMF], test x"${texmfdir}" != x)
-
-AM_PATH_LISPDIR
 
 AC_CONFIG_FILES([Makefile
                  lisp/Makefile
