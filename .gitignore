@@ -1,12 +1,13 @@
 *.elc
 *.info
-/aclocal.m4
+/lisp/bbdb-loaddefs.el
+/lisp/TAGS
+Makefile
+Makefile.in
 /autom4te.cache
-/autom4te.cache/
 /config.*
-/config.log
-/config.status
 /configure
+/aclocal.m4
 /doc/bbdb.aux
 /doc/bbdb.cp
 /doc/bbdb.cps
@@ -20,9 +21,5 @@
 /doc/bbdb.vr
 /doc/texinfo.tex
 /install-sh
-/lisp/TAGS
-/lisp/bbdb-loaddefs.el
 /lisp/bbdb-version.el
 /missing
-Makefile
-Makefile.in
