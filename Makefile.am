@@ -20,3 +20,4 @@
 
 SUBDIRS = lisp doc tex
 
+doc_DATA = COPYING Changelog AUTHORS NEWS README INSTALL TODO
