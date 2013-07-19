@@ -94,7 +94,7 @@ slightly munged old BBDB files."
 See `bbdb-migrate-record-lambda' for details.")
 
 (defun bbdb-migrate-insert-uuid (notes)
-  "Insert a UUID field in the notes section"""
+  "Insert a UUID field in the notes section"
   (unless (stringp notes)
     ;; First fix the timestamps
     (cons (cons 'bbdb-id (bbdb-genuuid)) notes)))

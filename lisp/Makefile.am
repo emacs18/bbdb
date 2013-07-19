@@ -1,66 +1,71 @@
-# Command line flags for Emacs.
-EMACSOPT = --batch --quick --directory=./
+# lisp/Makefile.am for BBDB
+#
+# Copyright (C) 2010-2013 Roland Winkler <winkler@@gnu.org>
 
-# The actual Emacs command run in the targets below.
-emacs = LC_ALL=C $(EMACS) $(EMACSOPT)
+# Author: Roland Winkler <winkler@@gnu.org>
+#  	  Christian Egli <christian.egli@sbs.ch>
+# 
+# This file is part of the Insidious Big Brother Database (aka BBDB),
+# 
+# BBDB is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# BBDB is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with BBDB.  If not, see <http://www.gnu.org/licenses/>.
 
-PUSHPATH = -eval '(push "./" load-path)'
+dist_lisp_LISP = 				\
+	bbdb.el					\
+	bbdb-anniv.el				\
+	bbdb-com.el				\
+	bbdb-gnus.el				\
+	bbdb-ispell.el				\
+	bbdb-message.el				\
+	bbdb-mhe.el				\
+	bbdb-migrate.el				\
+	bbdb-mua.el				\
+	bbdb-print.el				\
+	bbdb-rmail.el				\
+	bbdb-sc.el				\
+	bbdb-snarf.el				\
+	bbdb-version.el
 
-el_files_std = bbdb.el bbdb-com.el bbdb-print.el bbdb-anniv.el		\
-	   bbdb-migrate.el bbdb-snarf.el bbdb-mua.el bbdb-message.el	\
-	   bbdb-rmail.el bbdb-gnus.el bbdb-mhe.el bbdb-uuid.el
+dist_lisp_LISP += bbdb-uuid.el
 
-el_files_ver = bbdb-version.el
-
-el_files_vm = bbdb-vm.el
-
-EXTRA_DIST = $(el_files_std) $(el_files_vm)
-
-el_files = $(el_files_std) $(el_files_ver)
-if HAVE_VM
-el_files += $(el_files_vm)
+if VM
+dist_lisp_LISP += bbdb-vm.el
+# We use the Automake variable AM_ELCFLAGS to include the VM lisp directory
+# in the Emacs load path when compiling BBDB with VM support.
 endif
 
-lisp_DATA = $(el_files) $(el_files:.el=.elc) bbdb-loaddefs.el bbdb-loaddefs.elc
+lisp_DATA = bbdb-loaddefs.el
 
-MOSTLYCLEANFILES = $(el_files:.el=.elc) bbdb-loaddefs.el bbdb-loaddefs.elc
+MOSTLYCLEANFILES = bbdb-loaddefs.el
 
-# The variable generated-autoload-file must be set to an absolute
-# path, but $srcdir can be relative, so we use the current working
-# directory explicitly.
-
-bbdb-loaddefs.el: $(el_files)
+bbdb-loaddefs.el: $(dist_lisp_LISP)
+#	2011-12-11: We switched from bbdb-autoloads.el to bbdb-loaddefs.el.
+#	If the user still has an old bbdb-autoloads.el in the BBDB
+#	lisp directory (and keeps loading it from the emacs init file),
+#	we might get strange mistakes that things fail. So we throw an error
+#	if these old files are found.
+	@if test -f bbdb-autoloads.el -o -f bbdb-autoloads.elc; then \
+	  (echo "*** ERROR: Old file(s) \`bbdb-autoloads.el(c)' found ***" ; \
+	  echo "*** Delete these files; do not load them from your init file ***") && \
+	  false ; \
+	fi
 	@echo "(provide 'bbdb-loaddefs)" > $@;
 	@echo "(if (and load-file-name (file-name-directory load-file-name))" >> $@;
 	@echo "    (add-to-list 'load-path (file-name-directory load-file-name)))" >> $@;
 	@echo "" >> $@;
-	$(emacs) -l autoload					\
-		--eval '(setq generated-autoload-file "'$$(pwd)/$@'")'	\
-		--eval '(setq make-backup-files nil)'			\
-		-f batch-update-autoloads $$(pwd)
-
-.el.elc:
-	$(emacs) $(PUSHPATH) $(EMACS_EXTRA_FLAGS) -f batch-byte-compile $<
-
-bbdb.elc: bbdb-version.elc
-
-bbdb-com.elc bbdb-migrate.elc bbdb-snarf.elc bbdb-anniv.elc	\
-bbdb-ispell.elc bbdb-mua.elc bbdb-print.elc bbdb-rmail.elc	\
-bbdb-gnus.elc bbdb-mhe.elc: bbdb.elc bbdb-version.elc
-
-bbdb-mua.elc bbdb-print.elc bbdb-rmail.elc bbdb-gnus.elc bbdb-mhe.elc:	\
-bbdb-com.elc
-
-bbdb-rmail.elc bbdb-gnus.elc bbdb-mhe.elc: bbdb-mua.elc
-
-# VM is not part of GNU Emacs
-if HAVE_VM
-VM = -eval '(unless (string-match "$(VMDIR)" "") (push "$(VMDIR)" load-path))'
-bbdb-mua.elc: EMACS_EXTRA_FLAGS = -eval '(unless (string-match "$(VMDIR)" "") (push "$(VMDIR)" load-path) (load "vm" t t))'
-bbdb-vm.elc: bbdb.elc bbdb-version.elc bbdb-com.elc bbdb-mua.elc
-bbdb-vm.elc: EMACS_EXTRA_FLAGS = $(VM)
-endif
-
-autoloads: bbdb-loaddefs.el
-
-.PHONY: autoloads
+#	generated-autoload-file must have an absolute path
+#	$srcdir can be relative.
+	$(EMACS) -batch -l autoload \
+		--eval '(setq generated-autoload-file "'$(abs_builddir)/$@'")' \
+		--eval '(setq make-backup-files nil)' \
+		-f batch-update-autoloads $(srcdir)
