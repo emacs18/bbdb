@@ -3,7 +3,7 @@ AC_DEFUN([BBDB_WITH_VM],
 AC_ARG_WITH([vm-dir],
 AS_HELP_STRING([--with-vm-dir=DIR], [where to find VM's lisp directory]),
 # if VM was requested, make sure we have access to the source
-[if test "x$with_vm_dir" != "x"; then
+[if test "x$with_vm_dir" != xno -a "x$with_vm_dir" != "x"; then
     AC_MSG_CHECKING([for VM files])
     # convert path to absolute and canonicalize it.
     VMDIR=`${EMACS} -batch --quick -eval "(message \"%s\" (expand-file-name \"${with_vm_dir}\"))" 2>&1`
