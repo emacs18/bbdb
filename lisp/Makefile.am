@@ -36,8 +36,6 @@ dist_lisp_LISP = 				\
 	bbdb-snarf.el				\
 	bbdb-version.el
 
-dist_lisp_LISP += bbdb-uuid.el
-
 if VM
 dist_lisp_LISP += bbdb-vm.el
 # We use the Automake variable AM_ELCFLAGS to include the VM lisp directory

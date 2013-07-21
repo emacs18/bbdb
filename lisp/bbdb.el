@@ -48,7 +48,6 @@
   (autoload 'bbdb-completing-read-records "bbdb-com")
   (autoload 'bbdb-search "bbdb-com")
   (autoload 'bbdb-search-prompt "bbdb-com")
-  (autoload 'bbdb-genuuid "bbdb-uuid")
   (autoload 'mail-position-on-field "sendmail")
   (autoload 'vm-select-folder-buffer "vm-folder")
 
@@ -228,7 +227,6 @@ If a record has been created by analyzing a mail message, hook functions
 can use the variable `bbdb-update-records-address' to determine the header
 and class of the mail address according to `bbdb-message-headers'.")
 (add-hook 'bbdb-create-hook 'bbdb-creation-date)
-(add-hook 'bbdb-create-hook 'bbdb-add-uuid)
 
 (defvar bbdb-change-hook nil
   "*Hook run each time a BBDB record is changed.
@@ -1267,8 +1265,7 @@ window width that BBDB will take over."
 ;;; xfields processing
 (defcustom bbdb-xfields-sort-order
   '((notes . 0) (url . 1) (ftp . 2) (gopher . 3) (telnet . 4) (mail-alias . 5)
-    (mail-folder . 6) (lpr . 7) (creation-date . 1000) (timestamp . 1001)
-    (bbdb-id . 1002))
+    (mail-folder . 6) (lpr . 7) (creation-date . 1000) (timestamp . 1001))
   "The order for sorting the xfields.
 If an xfield is not in the alist, it is assigned weight 100, so all xfields
 with weights less then 100 will be in the beginning, and all xfields with
@@ -1560,7 +1557,7 @@ If none of these schemes succeeds, the face `bbdb-name' is used."
     "Enable debugging if non-nil during compile time.
 You really should not disable debugging.  But it will speed things up."))
 
-(defconst bbdb-file-format 8
+(defconst bbdb-file-format 7
   "BBDB file format.")
 
 (defconst bbdb-record-type
@@ -1931,12 +1928,6 @@ it is changed, otherwise it is added."
 Adds an xfield `creation-date' for RECORD which is the current time string."
   (bbdb-record-set-xfield record 'creation-date
                           (format-time-string bbdb-time-stamp-format nil t)))
-
-(defun bbdb-add-uuid (record)
-  "For use as a `bbdb-create-hook'.
-Adds a notes-field `bbdb-id' which will be a unique ID for the entry."
-  (bbdb-record-set-xfield record 'bbdb-id
-			  (bbdb-genuuid)))
 
 (defun bbdb-multiple-buffers-default ()
   "Default function for guessing a name for new *BBDB* buffers.

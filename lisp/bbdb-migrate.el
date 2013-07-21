@@ -24,10 +24,6 @@
 
 (require 'bbdb)
 
-;; When running BBDB, we have (require 'bbdb-autoloads)
-(eval-when-compile              ; pacify the compiler.
-  (autoload 'bbdb-genuuid "bbdb-uuid"))
-
 ;;; Migrating the BBDB
 
 ;; Unused
@@ -38,8 +34,7 @@
     (5 . "* More flexible street address.")
     (6 . "* postcodes are stored as plain strings.")
     (7 . "* Xfields is always a list.  Organizations are stored as list.
-  New field `affix'.")
-    (8 . "* Assign unique ID (RFC4122 UUID) to each entry"))
+  New field `affix'."))
   "BBDB Features that have changed in various database revisions.
 Format ((VERSION . DIFFERENCES) ... ).")
 
@@ -87,17 +82,9 @@ slightly munged old BBDB files."
     (6 (bbdb-record-xfields bbdb-record-set-xfields
         bbdb-migrate-xfields-to-list)
        (bbdb-record-organization bbdb-record-set-organization
-        bbdb-migrate-organization-to-list))
-    (7 (bbdb-record-xfields bbdb-record-set-xfields
-        bbdb-migrate-insert-uuid)))
+        bbdb-migrate-organization-to-list)))
   "The alist of (version . migration-spec-list).
 See `bbdb-migrate-record-lambda' for details.")
-
-(defun bbdb-migrate-insert-uuid (notes)
-  "Insert a UUID field in the notes section"
-  (unless (stringp notes)
-    ;; First fix the timestamps
-    (cons (cons 'bbdb-id (bbdb-genuuid)) notes)))
 
 (defun bbdb-migrate-record-lambda (changes)
   "Return a function which will migrate a single record.
