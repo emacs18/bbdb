@@ -33,3 +33,5 @@ set -e
 autoreconf --verbose --force --install --warnings=all
 
 echo "You can now run \`./configure'."
+
+exit 0
