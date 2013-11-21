@@ -1,3 +1,41 @@
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* configure.ac: Increase BBDB version number to 3.0.50.
+
+2013-11-16  Christian Egli <christian.egli@sbs.ch>
+	* Makefile.am: New target elpa.
+	* lisp/bbdb-pkg.el.in: New file for elpa.
+	* configure.ac, .gitignore: Handle it.
+	* lisp/Makefile.am: Define CLEANFILES and EXTRA_DIST.
+
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* m4/package_date.m4: Use git log.
+
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-sc.el: Fix documentation.
+	(bbdb/sc-consult-attr): Do not use car.
+	(Bug#40398)
+
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-field-menu): Use format.  Call
+	bbdb-browse-url for url xfields.
+	(bbdb-mouse-menu): Use format.
+
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-mua-update-interactive-p): Clarify doc string.
+
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-file): Use locate-user-emacs-file.
+
+2013-11-16  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-complete-mail): Only complete inside a
+	syntactically correct mail header.
+
+2013-10-06  Roland Winkler  <winkler@gnu.org>
+	* lisp/makefile-temp: Add commentary.  Copy bbdb-site.el.in to
+	bbdb-site.el.  Clean up.
+
+	* README: Clean up.
+
 2013-07-28  Roland Winkler  <winkler@gnu.org>
 	* doc/bbdb.texi: Add @dircategory and @direntry.
 	(Bug#38794)
@@ -1140,7 +1178,7 @@
 	(bbdb-list-transpose, bbdb-ident-point): New functions.
 	(bbdb-transpose-fields): Use them.  Make code more robust such
 	that it can be applied to any subfields of the same type.
-	(bbdb-field-equal, bbdb-next-field): Removed (obolete).
+	(bbdb-field-equal, bbdb-next-field): Removed (obsolete).
 	(bbdb-mail-aliases, bbdb-get-mail-aliases, bbdb-add-mail-alias)
 	(bbdb-browse-url): Use bbdb-record-note-split.
 

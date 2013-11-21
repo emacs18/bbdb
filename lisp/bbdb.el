@@ -133,7 +133,7 @@
 (put 'bbdb-utilities-snarf 'custom-loads '(bbdb-snarf))
 
 ;;; Customizable variables
-(defcustom bbdb-file "~/.bbdb"
+(defcustom bbdb-file (locate-user-emacs-file "bbdb" ".bbdb")
   "The name of the Insidious Big Brother Database file."
   :group 'bbdb
   :type 'file)
@@ -736,7 +736,8 @@ The car is used if the command is called without a prefix.
 The cdr is used if the command is called with a prefix (and if the prefix
         is not used for another purpose).
 
-Allowed values are (here ADDRESS is an email address found in a message):
+WITHOUT-PREFIX and WITH-PREFIX may take the values
+\(here ADDRESS is an email address found in a message):
  nil          Do nothing.
  search       Search for existing records matching ADDRESS.
  update       Search for existing records matching ADDRESS;
@@ -747,7 +748,6 @@ Allowed values are (here ADDRESS is an email address found in a message):
                 create a new record if it does not yet exist.
  a function   This functions will be called with no arguments.
                 It should return one of the above values.
-
  read         Read the value interactively."
   :group 'bbdb-mua
   :type '(cons (choice (const :tag "do nothing" nil)
@@ -3949,21 +3949,26 @@ There are numerous hooks.  M-x apropos ^bbdb.*hook RET
   (let ((type (car field)))
     (append
      (list
-      (concat "Commands for "
+      (format "Commands for %s Field:"
               (cond ((eq type 'xfields)
-                     (concat "\"" (symbol-name (car (nth 1 field)))
-                             "\" field:"))
-                    ((eq type 'name) "Name field:")
-                    ((eq type 'affix) "Affix field:")
-                    ((eq type 'organization) "Organization field:")
-                    ((eq type 'aka) "Alternate Names field:")
-                    ((eq type 'mail) "Mail Addresses field:")
+                     (format "\"%s\"" (symbol-name (car (nth 1 field)))))
+                    ((eq type 'name) "Name")
+                    ((eq type 'affix) "Affix")
+                    ((eq type 'organization) "Organization")
+                    ((eq type 'aka) "Alternate Names")
+                    ((eq type 'mail) "Mail Addresses")
                     ((memq type '(address phone))
-                     (concat "\"" (aref (nth 1 field) 0) "\" "
-                             (capitalize (symbol-name type)) " field:")))))
+                     (format "\"%s\" %s" (aref (nth 1 field) 0)
+                             (capitalize (symbol-name type)))))))
      (cond ((eq type 'phone)
             (list (vector (concat "Dial " (bbdb-phone-string (nth 1 field)))
-                          `(bbdb-dial ',field nil) t))))
+                          `(bbdb-dial ',field nil) t)))
+           ((eq type 'xfields)
+            (let* ((field (cadr field))
+                   (type (car field)))
+              (cond ((eq type 'url )
+                     (list (vector (format "Browse \"%s\"" (cdr field))
+                                   `(bbdb-browse-url ,record) t)))))))
      '(["Edit Field" bbdb-edit-field t])
      (unless (eq type 'name)
        '(["Delete Field" bbdb-delete-field-or-record t])))))
@@ -3999,8 +4004,7 @@ There are numerous hooks.  M-x apropos ^bbdb.*hook RET
         (popup-menu
          (append
           (list
-           (concat "Commands for record \""
-                   (bbdb-record-name record) "\":")
+           (format "Commands for record \"%s\":" (bbdb-record-name record))
            ["Delete Record" bbdb-delete-records t]
            ["Toggle Record Display Layout" bbdb-toggle-records-layout t]
            (if (and (not (eq 'full-multi-line
