@@ -37,7 +37,7 @@ dist_lisp_LISP = 				\
 	bbdb-snarf.el				\
 	bbdb-site.el
 
-lisp_LISP = bbdb-print-tex-path.el
+dist_lisp_LISP += bbdb-print-tex-path.el
 
 if VM
 dist_lisp_LISP += bbdb-vm.el
