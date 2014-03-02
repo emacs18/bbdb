@@ -37,8 +37,6 @@ dist_lisp_LISP = 				\
 	bbdb-snarf.el				\
 	bbdb-site.el
 
-dist_lisp_LISP += bbdb-print-tex-path.el
-
 if VM
 dist_lisp_LISP += bbdb-vm.el
 # We use the Automake variable AM_ELCFLAGS to include the VM lisp directory
@@ -48,12 +46,12 @@ endif
 lisp_DATA = bbdb-loaddefs.el
 
 MOSTLYCLEANFILES = bbdb-loaddefs.el
-CLEANFILES = bbdb-site.el bbdb-pkg.el
+CLEANFILES = bbdb-site.el bbdb-pkg.el bbdb-site-pre-sed.el
 
 # The Emacs function define-package is not autoloaded.
 # So we assume we need not compile bbdb-pkg.el (which otherwise
 # results in a compiler warning that define-package is not defined).
-EXTRA_DIST = bbdb-site.el.in bbdb-pkg.el.in bbdb-pkg.el
+EXTRA_DIST = bbdb-pkg.el bbdb-site-pre-sed.el
 
 bbdb-loaddefs.el: $(dist_lisp_LISP)
 #	2011-12-11: We switched from bbdb-autoloads.el to bbdb-loaddefs.el.
@@ -78,10 +76,6 @@ bbdb-loaddefs.el: $(dist_lisp_LISP)
 		-f batch-update-autoloads $(srcdir)
 
 # The true pkgdatadir can only be generated at "make" time.
-# So we put it in its own file, created here, and loaded by bbdb-site.
-bbdb-print-tex-path.el:
-	@echo >  $@ "(defcustom bbdb-print-tex-path '(\"$(pkgdatadir)\")"
-	@echo >> $@ "  \"List of directories with the BBDB tex files.\""
-	@echo >> $@ "  :group 'bbdb-utilities-print"
-	@echo >> $@ "  :type '(repeat (directory :tag \"Directory\")))"
-	@echo >> $@ "(provide 'bbdb-print-tex-path)"
+bbdb-site.el: bbdb-site-pre-sed.el
+	sed --expression="s:^(defcustom bbdb-print-tex-path.*$$:(defcustom bbdb-print-tex-path '(\"$(pkgdatadir)\"):" \
+	    < $< > $@
