@@ -46,12 +46,12 @@ endif
 lisp_DATA = bbdb-loaddefs.el
 
 MOSTLYCLEANFILES = bbdb-loaddefs.el
-CLEANFILES = bbdb-site.el bbdb-pkg.el bbdb-site-pre-sed.el
+CLEANFILES = bbdb-site.el bbdb-pkg.el
 
 # The Emacs function define-package is not autoloaded.
 # So we assume we need not compile bbdb-pkg.el (which otherwise
 # results in a compiler warning that define-package is not defined).
-EXTRA_DIST = bbdb-pkg.el bbdb-site-pre-sed.el
+EXTRA_DIST = bbdb-pkg.el
 
 bbdb-loaddefs.el: $(dist_lisp_LISP)
 #	2011-12-11: We switched from bbdb-autoloads.el to bbdb-loaddefs.el.
@@ -76,6 +76,8 @@ bbdb-loaddefs.el: $(dist_lisp_LISP)
 		-f batch-update-autoloads $(srcdir)
 
 # The true pkgdatadir can only be generated at "make" time.
-bbdb-site.el: bbdb-site-pre-sed.el
+bbdb-site.el: bbdb-site.el.in
 	sed --expression="s:^(defcustom bbdb-print-tex-path.*$$:(defcustom bbdb-print-tex-path '(\"$(pkgdatadir)\"):" \
+	    --expression="s/[@]PACKAGE_VERSION[@]/$(PACKAGE_VERSION)/" \
+	    --expression="s/[@]PACKAGE_DATE[@]/$(PACKAGE_DATE)/" \
 	    < $< > $@
