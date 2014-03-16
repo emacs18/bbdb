@@ -14,7 +14,7 @@ bbdb3 source: license-problem-gfdl-invariants debian/copyright
 
 # The upstream/3.1.1 tag in git and the upstream tarball differ by the
 # accidential exclusion of lisp/makefile-temp from the "make dist"
-# generated tarball.  This file us not used in the debian build, and
-# this should be fixed in the next upstream release.
+# generated tarball.  This file is not used in the debian build, and
+# its omission from the tarball should be addressed upstream.
 
 bbdb3 source: quilt-patch-using-template-description debian-changes
