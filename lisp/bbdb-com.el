@@ -257,13 +257,14 @@ but not allowing for regexps."
         (push `(cond ((stringp ,xfield-re)
                       ;; check xfield `bbdb-default-xfield'
                       (string-match ,xfield-re
-                                    (or (bbdb-record-xfield record bbdb-default-xfield) "")))
+                                    (or (bbdb-record-xfield-string
+                                         record bbdb-default-xfield) "")))
                      ((eq (car ,xfield-re) '*)
                       ;; check all xfields
                       (let ((labels bbdb-xfield-label-list) done tmp)
                         (if (bbdb-record-xfields record)
                             (while (and (not done) labels)
-                              (setq tmp (bbdb-record-xfield record (car labels))
+                              (setq tmp (bbdb-record-xfield-string record (car labels))
                                     done (and tmp (string-match (cdr ,xfield-re)
                                                                 tmp))
                                     labels (cdr labels)))
@@ -273,7 +274,7 @@ but not allowing for regexps."
                         done))
                      (t ; check one field
                       (string-match (cdr ,xfield-re)
-                                    (or (bbdb-record-xfield
+                                    (or (bbdb-record-xfield-string
                                          record (car ,xfield-re)) ""))))
               clauses))
     `(let ((case-fold-search bbdb-case-fold-search)
@@ -485,7 +486,7 @@ The search results are displayed in the BBDB buffer."
 (defun bbdb-fix-records (records)
   "Fix broken RECORDS.
 Interactively, use BBDB prefix \
-\\<bbdb-mode-map>\\[bbdb-do-all-records], see `bbdb-do-all-records',"
+\\<bbdb-mode-map>\\[bbdb-do-all-records], see `bbdb-do-all-records'."
   (interactive (list (bbdb-do-records)))
   (bbdb-editable)
   (dolist (record (bbdb-record-list records))
@@ -498,6 +499,16 @@ Interactively, use BBDB prefix \
     (bbdb-record-set-field record 'aka (bbdb-record-aka record))
     (bbdb-record-set-field record 'mail (bbdb-record-mail record))
     (bbdb-change-record record)))
+
+(defun bbdb-touch-records (records)
+  "Touch RECORDS by calling `bbdb-change-hook' unconditionally.
+Interactively, use BBDB prefix \
+\\<bbdb-mode-map>\\[bbdb-do-all-records], see `bbdb-do-all-records'."
+  (interactive (list (bbdb-do-records)))
+  (bbdb-editable)
+  (let ((bbdb-update-unchanged-records t))
+    (dolist (record (bbdb-record-list records))
+      (bbdb-change-record record))))
 
 ;;; Time-based functions
 
@@ -862,20 +873,20 @@ A non-nil prefix arg is passed on to `bbdb-read-field' as FLAG (see there)."
          (bbdb-record-set-field record 'aka value))
         ;; xfields
         ((assq field (bbdb-record-xfields record))
-         (error "xfield \"%s\" already exists" field))
+         (error "Xfield \"%s\" already exists" field))
         (t
          (bbdb-record-set-xfield record field value)))
-  (let (bbdb-layout)
-    (bbdb-change-record record)))
+  (unless (bbdb-change-record record)
+    (message "Record unchanged")))
 
 (defun bbdb-read-field (record field &optional flag)
-  "For RECORD read FIELD interactively.
-If inserting a new phone number, the phone number style
-is controlled via `bbdb-phone-style'.  A non-nil FLAG inverts the style,
-
-If inserting a new mail address lacking a domain, BBDB appends
-`bbdb-default-domain' if this variable non-nil.  With non-nil FLAG
-\(or `bbdb-default-domain' being nil) do not alter the mail address."
+  "For RECORD read new FIELD interactively.
+- The phone number style is controlled via `bbdb-phone-style'.
+  A prefix FLAG inverts the style,
+- If a mail address lacks a domain, append `bbdb-default-domain'
+  if this variable non-nil.  With prefix FLAG do not alter the mail address.
+- The value of an xfield is a string.  With prefix FLAG the value may be
+  any lisp object."
   (let* ((init-f (intern-soft (concat "bbdb-init-" (symbol-name field))))
          (init (if (and init-f (functionp init-f))
                    (funcall init-f record))))
@@ -918,7 +929,7 @@ If inserting a new mail address lacking a domain, BBDB appends
                (y-or-n-p
                 (format "\"%s\" is an unknown field name.  Define it? " field))
                (error "Aborted"))
-           (bbdb-read-xfield field init)))))
+           (bbdb-read-xfield field init flag)))))
 
 ;;;###autoload
 (defun bbdb-edit-field (record field &optional value flag)
@@ -927,7 +938,10 @@ If point is in the middle of a multi-line field (e.g., address),
 then the entire field is edited, not just the current line.
 For editing phone numbers or addresses, VALUE must be the phone number
 or address that gets edited. An error is thrown when attempting to edit
-a phone number or address with VALUE being nil."
+a phone number or address with VALUE being nil.
+
+- The value of an xfield is a string.  With prefix FLAG the value may be
+  any lisp object."
   (interactive
    (save-excursion
      (bbdb-editable)
@@ -954,7 +968,7 @@ a phone number or address with VALUE being nil."
              record 'name
              (bbdb-read-name
               (if flag
-                  ;; Here we try to obey the name-format field for
+                  ;; Here we try to obey the name-format xfield for
                   ;; editing the name field.  Is this useful?  Or is this
                   ;; irritating overkill and we better obey consistently
                   ;; `bbdb-read-name-format'?
@@ -985,8 +999,9 @@ a phone number or address with VALUE being nil."
           (t ; xfield
            (bbdb-record-set-xfield
             record field
-            (bbdb-read-xfield field (bbdb-record-xfield record field)))))
-    (bbdb-change-record record bbdb-need-to-sort)))
+            (bbdb-read-xfield field (bbdb-record-xfield record field) flag))))
+    (unless (bbdb-change-record record bbdb-need-to-sort)
+      (message "Record unchanged"))))
 
 (defun bbdb-edit-foo (record field &optional nvalue)
   "For RECORD edit some FIELD (mostly interactively).
@@ -1071,13 +1086,16 @@ of FIELD is the cdr of this variable."
       (bbdb-insert-field record field
                          (bbdb-read-field record field)))))
 
-(defun bbdb-read-xfield (field &optional init)
+(defun bbdb-read-xfield (field &optional init sexp)
   "Read xfield FIELD with optional INIT.
 This calls bbdb-read-xfield-FIELD if it exists."
   (let ((read-fun (intern-soft (format "bbdb-read-xfield-%s" field))))
-    (if (fboundp read-fun)
-        (funcall read-fun init)
-      (bbdb-read-string (format "%s: " field) init))))
+    (cond ((fboundp read-fun)
+           (funcall read-fun init))
+          ((and (not sexp) (string-or-null-p init))
+           (bbdb-read-string (format "%s: " field) init))
+          (t (read-minibuffer (format "%s (sexp): " field)
+                              (prin1-to-string init))))))
 
 (defun bbdb-read-organization (&optional init)
   "Read organization."
@@ -1459,12 +1477,15 @@ Interactively, use BBDB prefix \
   "Remove current record from the display without deleting it from BBDB.
 With prefix N, omit the next N records.  If negative, omit backwards."
   (interactive "p")
-  (while (not (= n 0))
-    (if (< n 0) (bbdb-prev-record 1))
-    (let ((record (bbdb-current-record t)))
-      (bbdb-redisplay-record (car record) t)
-      (setq bbdb-records (delete record bbdb-records)))
-    (setq n (if (> n 0) (1- n) (1+ n)))))
+  (let ((num  (get-text-property (if (and (not (bobp)) (eobp))
+                                     (1- (point)) (point))
+                                 'bbdb-record-number)))
+    (if (> n 0)
+        (setq n (min n (- (length bbdb-records) num)))
+      (setq n (min (- n) num))
+      (bbdb-prev-record n))
+    (dotimes (i n)
+      (bbdb-redisplay-record (bbdb-current-record) t))))
 
 ;;; Fixing up bogus records
 
@@ -2369,41 +2390,61 @@ Rebuilding the aliases is enforced if prefix FORCE-REBUILT is t."
         (add-to-list 'result alias)))))
 
 ;;;###autoload
-(defun bbdb-add-mail-alias (record &optional alias delete)
-  "Add ALIAS to RECORD.
-If pefix DELETE is non-nil, remove ALIAS from RECORD."
-  (interactive
-   (let* ((_ (bbdb-editable))
-          (record (bbdb-current-record))
-          (init-f (concat "bbdb-init-" (symbol-name bbdb-mail-alias-field)))
-          (init (if (and (setq init-f (intern-soft init-f))
-                         (functionp init-f))
-                    (funcall init-f record))))
-     (list record
-           (completing-read
-            (format "%s mail alias: "
-                    (if current-prefix-arg "Remove" "Add"))
-            (if current-prefix-arg
-                (or (bbdb-record-xfield-split record bbdb-mail-alias-field)
-                    (error "Record has no alias"))
-              (bbdb-get-mail-aliases))
-            nil nil init) current-prefix-arg)))
-  (setq alias (bbdb-string-trim alias))
-  (unless (string= "" alias)
-    (let ((aliases (bbdb-record-xfield-split record bbdb-mail-alias-field)))
-      (if delete
-          (setq aliases (delete alias aliases))
-        ;; Add alias only if it is not there yet
-        (add-to-list 'aliases alias))
-      (setq aliases (bbdb-concat bbdb-mail-alias-field aliases))
-      (bbdb-record-set-xfield record bbdb-mail-alias-field aliases))
-    (bbdb-change-record record)
-    ;; Rebuilt mail aliases
-    (setq bbdb-mail-aliases-need-rebuilt
+(defsubst bbdb-mail-alias-list (alias)
+  (if (stringp alias)
+      (bbdb-split bbdb-mail-alias-field alias)
+    alias))
+
+(defun bbdb-add-mail-alias (records &optional alias delete)
+  "Add ALIAS to RECORDS.
+If prefix DELETE is non-nil, remove ALIAS from RECORDS.
+Interactively, use BBDB prefix \
+\\<bbdb-mode-map>\\[bbdb-do-all-records], see `bbdb-do-all-records'.
+Arg ALIAS is ignored if list RECORDS contains more than one record.
+Instead read ALIAS interactively for each record in RECORDS.
+If the function `bbdb-init-mail-alias' is defined, it is called with
+one arg RECORD to define the default value for ALIAS of RECORD."
+  (interactive (list (bbdb-do-records) nil current-prefix-arg))
+  (bbdb-editable)
+  (setq records (bbdb-record-list records))
+  (if (< 1 (length records)) (setq alias nil))
+  (let* ((tmp (intern-soft
+               (concat "bbdb-init-" (symbol-name bbdb-mail-alias-field))))
+         (init-f (if (functionp tmp) tmp)))
+    (dolist (record records)
+      (let ((r-a-list (bbdb-record-xfield-split record bbdb-mail-alias-field))
+            (alias alias)
+            a-list)
+        (if alias
+            (setq a-list (bbdb-mail-alias-list alias))
+          (when init-f
+            (setq a-list (bbdb-mail-alias-list (funcall init-f record))
+                  alias (if a-list (bbdb-concat bbdb-mail-alias-field a-list))))
+          (let ((crm-separator
+                 (concat "[ \t\n]*"
+                         (cadr (assq bbdb-mail-alias-field bbdb-separator-alist))
+                         "[ \t\n]*"))
+                (crm-local-completion-map bbdb-crm-local-completion-map)
+                (prompt (format "%s mail alias:%s " (if delete "Remove" "Add")
+                                (if alias (format " (default %s)" alias) "")))
+                (collection (if delete
+                                (or r-a-list (error "Record has no alias"))
+                              (bbdb-get-mail-aliases))))
+            (setq a-list (if (string< "24.3" (substring emacs-version 0 4))
+                             (completing-read-multiple prompt collection nil
+                                                       delete nil nil alias)
+                          (bbdb-split bbdb-mail-alias-field
+                                      (completing-read prompt collection nil
+                                                       delete nil nil alias))))))
+        (dolist (a a-list)
           (if delete
-              'deleted
-            (if (bbdb-record-mail record)
-                'new)))))
+              (setq r-a-list (delete a r-a-list))
+            ;; Add alias only if it is not there yet
+            (add-to-list 'r-a-list a)))
+        ;; This also handles `bbdb-mail-aliases-need-rebuilt'
+        (bbdb-record-set-xfield record bbdb-mail-alias-field
+                                (bbdb-concat bbdb-mail-alias-field r-a-list))
+        (bbdb-change-record record)))))
 
 ;;; Dialing numbers from BBDB
 
