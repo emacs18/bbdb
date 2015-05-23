@@ -1,7 +1,7 @@
 ;;; bbdb.el --- core of BBDB
 
 ;; Copyright (C) 1991, 1992, 1993, 1994 Jamie Zawinski <jwz@netscape.com>.
-;; Copyright (C) 2010-2014 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2015 Roland Winkler <winkler@gnu.org>
 
 ;; This file is part of the Insidious Big Brother Database (aka BBDB),
 
@@ -1666,6 +1666,8 @@ See also `bbdb-silent'.")
             (add-hook 'mail-setup-hook 'bbdb-insinuate-mail)))
     (message                    ; the gnus mail user agent
      (add-hook 'message-setup-hook 'bbdb-insinuate-message))
+    (mu4e                       ; the mu4e user agent
+     (add-hook 'mu4e-main-mode-hook 'bbdb-insinuate-mu4e))
 
     (sc                         ; supercite
      (add-hook 'sc-load-hook 'bbdb-insinuate-sc))
@@ -1679,6 +1681,9 @@ See also `bbdb-silent'.")
 
 (defvar bbdb-search-invert nil
   "Bind this variable to t in order to invert the result of `bbdb-search'.")
+
+(defvar bbdb-do-all-records nil
+  "Controls the behavior of the command `bbdb-do-all-records'.")
 
 (defvar bbdb-append-display nil
   "Controls the behavior of the command `bbdb-append-display'.")
@@ -1733,12 +1738,13 @@ and mail.  In elisp lingo, this is really an obarray.")
 (defvar bbdb-country-list nil
   "List of countries known to BBDB.")
 
-(defvar bbdb-modeline-info (make-vector 4 nil)
+(defvar bbdb-modeline-info (make-vector 6 nil)
   "Precalculated mode line info for BBDB commands.
-This is a vector [APPEND-M INVERT-M APPEND INVERT].
+This is a vector [APPEND-M APPEND INVERT-M INVERT ALL-M ALL].
 APPEND-M is the mode line info if `bbdb-append-display' is non-nil.
 INVERT-M is the mode line info if `bbdb-search-invert' is non-nil.
-APPEND and INVERT appear in the message area.")
+ALL-M is the mode line info if `bbdb-do-all-records' is non-nil.
+APPEND, INVERT, and ALL appear in the message area.")
 
 (defvar bbdb-update-unchanged-records nil
   "If non-nil update unchanged records in the database.
@@ -4015,8 +4021,9 @@ The BBDB buffer must be current when this is called."
   ;; Ideally, `bbdb-redisplay-record' should put the point such that it
   ;; matches the previous value `bbdb-ident-point'.
   (let ((full-record (assq record bbdb-records)))
-    (if (null full-record) ; new record
-        (bbdb-display-records (list record) nil t)
+    (if (null full-record)
+        (unless delete-p
+          (bbdb-display-records (list record) nil t)) ; new record
       (let ((marker (nth 2 full-record))
             (end-marker (nth 2 (car (cdr (memq full-record bbdb-records)))))
             buffer-read-only record-number)
@@ -4050,12 +4057,12 @@ The BBDB buffer must be current when this is called."
           (run-hooks 'bbdb-display-hook))))))
 
 (defun bbdb-maybe-update-display (record &optional delete-p)
-  "If RECORD is currently displayed update display.
+  "Update display of RECORD in all BBDB buffers.
 If DELETE-P is nil RECORD is removed from the BBDB buffers."
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
       (if (and (eq major-mode 'bbdb-mode)
-               (memq record (bbdb-records)))
+               (memq record (mapcar 'car bbdb-records)))
           (let ((window (get-buffer-window bbdb-buffer-name)))
             (if window
                 (with-selected-window window
@@ -4249,7 +4256,8 @@ There are numerous hooks.  M-x apropos ^bbdb.*hook RET
                                 (length bbdb-records))))
               '(:eval (concat "  "
                               (bbdb-concat " " (elt bbdb-modeline-info 0)
-                                           (elt bbdb-modeline-info 1)))))
+                                           (elt bbdb-modeline-info 2)
+                                           (elt bbdb-modeline-info 4)))))
         mode-line-modified
         ;; For the mode-line we want to be fast. So we skip the checks
         ;; performed by `bbdb-with-db-buffer'.
@@ -4493,6 +4501,7 @@ List MUAS may include the following symbols to initialize the respective
 mail/news readers, composers, and miscellaneous packages:
   gnus       Gnus mail/news reader.
   mh-e       MH-E mail reader.
+  mu4e       Mu4e mail reader.
   rmail      Rmail mail reader.
   vm         VM mail reader.
   mail       Mail (M-x mail).
