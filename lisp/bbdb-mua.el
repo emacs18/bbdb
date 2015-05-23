@@ -1,7 +1,7 @@
 ;;; bbdb-mua.el --- various MUA functionality for BBDB
 
 ;; Copyright (C) 1991, 1992, 1993 Jamie Zawinski <jwz@netscape.com>.
-;; Copyright (C) 2010-2014 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2015 Roland Winkler <winkler@gnu.org>
 
 ;; This file is part of the Insidious Big Brother Database (aka BBDB),
 
@@ -54,6 +54,8 @@
   (autoload 'mh-show "mh-show")
   (defvar mh-show-buffer)
 
+  (defvar mu4e~view-buffer-name)
+
   (autoload 'message-field-value "message")
   (autoload 'mail-decode-encoded-word-string "mail-parse"))
 
@@ -63,7 +65,8 @@
     (rmail rmail-mode rmail-summary-mode)
     (mh mhe-mode mhe-summary-mode mh-folder-mode)
     (message message-mode)
-    (mail mail-mode))
+    (mail mail-mode)
+    (mu4e mu4e-view-mode)) ; Tackle `mu4e-headers-mode' later
   "Alist of MUA modes supported by BBDB.
 Each element is of the form (MUA MODE MODE ...), where MODEs are used by MUA.")
 
@@ -75,6 +78,7 @@ Return values include
   vm        Viewmail
   mh        Emacs interface to the MH mail system (aka MH-E)
   message   Mail and News composition mode that goes with Gnus
+  mu4e      Mu4e
   mail      Emacs Mail Mode."
   (let ((mm-alist bbdb-mua-mode-alist)
         elt mua)
@@ -108,6 +112,7 @@ MIME encoded headers are decoded.  Return nil if HEADER does not exist."
                     ((eq mua 'vm) (bbdb/vm-header header))
                     ((eq mua 'rmail) (bbdb/rmail-header header))
                     ((eq mua 'mh) (bbdb/mh-header header))
+                    ((eq mua 'mu4e) (message-field-value header))
                     ((memq mua '(message mail)) (message-field-value header))
                     (t (error "BBDB/%s: header function undefined" mua)))))
     (if val (mail-decode-encoded-word-string val))))
@@ -212,11 +217,9 @@ UPDATE-P may take the following values:
                 query for creation of a new record if the record does not exist.
  create or t  Search for existing records matching ADDRESS;
                 create a new record if it does not yet exist.
+ nil          Do nothing.
  a function   This functions will be called with no arguments.
                 It should return one of the above values.
- nil          Take the MUA-specific variable `bbdb/MUA-update-records-p'
-                which may take one of the above values.
-                If this still gives nil, `bbdb-update-records' returns nil.
 
 If SORT is non-nil, sort records according to `bbdb-record-lessp'.
 Ottherwise, the records are ordered according to ADDRESS-LIST.
@@ -228,19 +231,10 @@ Usually this function is called by the wrapper `bbdb-mua-update-records'."
   ;; We resolve UPDATE-P repeatedly.  This is needed, for example,
   ;; with the chain `bbdb-mua-auto-update-p' -> `bbdb-select-message'
   ;; -> `bbdb-update-records-p'.
-  (let (done fallback)
-    (while (not done)
-      (cond ((and (functionp update-p)
-                  ;; Bad! `search' is a function in `cl-seq.el'.
-                  (not (eq update-p 'search)))
-             (setq update-p (funcall update-p)))
-            ((not (or update-p fallback))
-             ;; The fallback is applied at most once.
-             (setq update-p (symbol-value
-                             (intern-soft (format "bbdb/%s-update-records-p"
-                                                  (bbdb-mua))))
-                   fallback t))
-            ((setq done t)))))
+  (while (and (functionp update-p)
+              ;; Bad! `search' is a function in `cl-seq.el'.
+              (not (eq update-p 'search)))
+    (setq update-p (funcall update-p)))
   (cond ((eq t update-p)
          (setq update-p 'create))
         ((not (memq update-p '(search update query create nil)))
@@ -601,7 +595,12 @@ If SORT is non-nil, sort records according to `bbdb-record-lessp'."
         (set-buffer rmail-buffer)
         (bbdb-update-records (bbdb-get-address-components header-class)
                              update-p sort))
-       ;; Message and Mail
+       ;; mu4e
+       ((eq mua 'mu4e)
+        (set-buffer mu4e~view-buffer-name)
+        (bbdb-update-records (bbdb-get-address-components header-class)
+                             update-p sort))
+      ;; Message and Mail
        ((memq mua '(message mail))
         (bbdb-update-records (bbdb-get-address-components header-class)
                              update-p sort))))))
@@ -618,10 +617,10 @@ If SORT is non-nil, sort records according to `bbdb-record-lessp'."
             (save-current-buffer
               (gnus-summary-select-article) ; sets buffer `gnus-summary-buffer'
               ,@body))
-           ((memq mua '(mail message rmail mh vm))
+           ((memq mua '(mail message rmail mh vm mu4e))
             (cond ((eq mua 'vm) (vm-follow-summary-cursor))
                   ((eq mua 'mh) (mh-show)))
-            ;; rmail, mail and message do not require any wrapper
+            ;; rmail, mail, message and mu4e do not require any wrapper
             ,@body))))
 
 (defun bbdb-mua-update-interactive-p ()
