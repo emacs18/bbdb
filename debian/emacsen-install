@@ -60,6 +60,14 @@ if test \! -d ../vm; then
     FILES="$(echo "$FILES" | sed 's:bbdb-vm[.]el::')"
 fi
 
+# Check if mu4e is installed for this flavour.
+# If not, do not install or compile bbdb-mu4e.
+if test \! -d ../mu4e; then
+    echo "mu4e seems uninstalled in $FLAVOR, skipping bbdb-mu4e"
+    rm bbdb-mu4e.el || echo failure to remove bbdb-mu4e.el
+    FILES="$(echo "$FILES" | sed 's:bbdb-mu4e[.]el::')"
+fi
+
 cat << EOF > path.el
 (debian-pkg-add-load-path-item ".")
 (setq byte-compile-warnings nil)
