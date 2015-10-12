@@ -19,6 +19,6 @@
   ;; If package-dir does not exist the bbdb3 package must have been
   ;; removed but not purged, and we should skip the setup.
   (when (file-directory-p package-dir)
-    (setq load-path (cons package-dir load-path))
+    (debian-pkg-add-load-path-item package-dir)
     (require 'bbdb-loaddefs)
     (add-to-list 'auto-mode-alist '("\\.bbdb$" . bbdb-mode))))
