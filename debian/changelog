@@ -1,3 +1,9 @@
+bbdb3 (3.1.2-4) unstable; urgency=medium
+
+  * Do not put *.bbdb files in bbdb-mode (closes: #801613)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 12 Oct 2015 16:54:09 +0100
+
 bbdb3 (3.1.2-3) unstable; urgency=medium
 
   * fix inappropriate mu4e installation dependency (closes: #797030)
