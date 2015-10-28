@@ -1,3 +1,33 @@
+2015-09-10  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-anniv.el, lisp/bbdb-mu4e.el, lisp/bbdb-print.el:
+	* lisp/bbdb-snarf.el, lisp/bbdb-com.el, lisp/bbdb-message.el:
+	* lisp/bbdb-mua.el, lisp/bbdb-rmail.el, lisp/bbdb-gnus.el:
+	* lisp/bbdb-mhe.el, lisp/bbdb-pgp.el, lisp/bbdb-sc.el:
+	* lisp/bbdb-vm.el, lisp/bbdb-ispell.el, lisp/bbdb-migrate.el:
+	* lisp/bbdb-site.el.in, lisp/bbdb.el: Conform to Emacs Lisp
+	package format convention.
+	(Bug#45910)
+
+2015-09-10  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-separator-alist): Use two newline characters
+	to separate records.
+
+2015-09-07  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-search-changed): Fix docstring.
+
+2015-09-07  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-delete-field-or-record): Use delete for
+	phone and address fields.
+
+2015-09-07  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-copy-records-as-kill): Fix docstring.
+	Delete unused local variable marker.
+
+2015-09-07  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-com.el (bbdb-copy-fields-as-kill): New command.
+	* lisp/bbdb.el (bbdb-separator-alist, bbdb-mode-map): Update
+	accordingly.
+
 2015-05-23  Eric Abrahamsen <eric@ericabrahamsen.net>
 	* lisp/bbdb.el (bbdb-record-set-field, bbdb-parse-records): Use
 	equal for comparison when populating lists of labels.
