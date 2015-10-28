@@ -1,3 +1,9 @@
+bbdb3 (3.1.2-5) unstable; urgency=medium
+
+  * track upstream changes, mainly minor maintenance
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Wed, 28 Oct 2015 10:37:08 +0000
+
 bbdb3 (3.1.2-4) unstable; urgency=medium
 
   * Do not put *.bbdb files in bbdb-mode (closes: #801613)
