@@ -1,12 +1,12 @@
 BBDB NEWS -- history of user-visible changes.
 
-Copyright (C) 2013-2015 Roland Winkler <winkler@gnu.org>
+Copyright (C) 2013-2016 Roland Winkler <winkler@gnu.org>
 See the end of the file for license conditions.
 
 This file is about changes in BBDB version 3.
 
 * BBDB 3.2
-** Support for Mu4e has been added.
+** Support for Mu4e and Wanderlust has been added.
 
 ** Incompatible Changes in BBDB 3.2
 

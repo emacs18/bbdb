@@ -1,3 +1,110 @@
+2016-07-20  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-display-record-one-line)
+	* lisp/bbdb-snarf.el (bbdb-snarf-label, bbdb-snarf-phone-nanp):
+	Use 2nd arg of looking-back.
+
+2016-07-20  Roland Winkler  <winkler@gnu.org>
+	Update copyright year in all files.
+
+2016-07-20  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-mua.el (bbdb-mua-mode-alist): Add support for
+	mu4e-compose-mode and notmuch-message-mode which are derived from
+	message-mode.
+
+2016-07-20  Roland Winkler  <winkler@gnu.org>
+	* m4/emacs_wl.m4: New file
+	* configure.ac: Use it.
+	* NEWS, README: Document support for Wanderlust
+
+2016-07-20  David Maus  <dmaus@dmaus.name>
+	Add basic support for Wanderlust.
+	* lisp/Makefile.am, lisp/makefile-temp: Support Wanderlust.
+	* lisp/bbdb-mua.el (bbdb-mua-mode-alist, bbdb-mua)
+	(bbdb-message-header, bbdb-mua-update-records, bbdb-mua-wrapper):
+	Add support for Wanderlust.
+	(bbdb-mua-auto-update-init): Add wanderlust to list of auto-update
+	muas.
+	* lisp/bbdb.el (bbdb-init-forms): Add support for Wanderlust.
+	* lisp/bbdb-wl.el: New file.
+
+2016-07-20 Marco Wahl <marcowahlsoft@gmail.com>
+	* lisp/bbdb-com.el (bbdb-omit-record): Fix arg list of
+	bbdb-redisplay-record.
+
+2016-07-20  Roland Winkler  <winkler@gnu.org>
+	Make bbdb-hashtable a proper hash table.
+	* lisp/bbdb.el (bbdb-hashtable): Use make-hash-table.
+	(bbdb-puthash, bbdb-gethash, bbdb-remhash, bbdb-buffer)
+	* lisp/bbdb-com.el (bbdb-completion-predicate)
+	(bbdb-completing-read-records, bbdb-complete-mail): Use it.
+
+2016-07-20  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-add-to-list): Remove.
+	(bbdb-pushnew, bbdb-pushnewq, bbdb-pushnewt): New macros.
+	(bbdb-record-set-xfield, bbdb-record-set-field)
+	(bbdb-merge-concat-remove-duplicates, bbdb-parse-records)
+	(bbdb-change-record)
+	* lisp/bbdb-com.el (bbdb-mail-aliases, bbdb-get-mail-aliases)
+	(bbdb-add-mail-alias)
+	* lisp/bbdb-mua.el (bbdb-update-records): Use them.
+
+2015-11-14  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb.el (bbdb-auto-revert, bbdb-dedicated-window)
+	(bbdb-default-domain, bbdb-mua-pop-up)
+	(bbdb-horiz-pop-up-window-size, bbdb-xfields-sort-order)
+	(bbdb-mua-summary-unification-list, bbdb-mail-avoid-redundancy)
+	* lisp/bbdb-snarf.el (bbdb-snarf-address-us-country)
+	(bbdb-snarf-address-eu-country)
+	* lisp/bbdb-anniv.el (bbdb-anniv-alist)
+	* lisp/bbdb-vm.el (bbdb/vm-virtual-real-folders)
+	* lisp/bbdb-gnus.el (bbdb/gnus-score-default)
+	(bbdb/gnus-split-myaddr-regexp, bbdb/gnus-split-private-field)
+	(bbdb/gnus-split-public-field)
+	* lisp/bbdb-sc.el (bbdb-sc-update-attrib-p): Fix defcustom.
+
+2015-11-08  Roland Winkler  <winkler@gnu.org>
+	Add new snarfing rule eu for many continental European countries.
+	Improve snarfing algorithm.
+	* lisp/bbdb-snarf.el (bbdb-snarf-rule-alist): Add new rule eu.
+	(bbdb-snarf-phone-nanp-regexp, bbdb-snarf-postcode-us-regexp)
+	(bbdb-snarf-url-regexp): Improve regexp.  Use first subexpression.
+	(bbdb-snarf-mail-regexp): New variable.
+	(bbdb-snarf-mail): Use it.
+	(bbdb-snarf-address-us-country): New variable.
+	(bbdb-snarf-address-us): Use it.  Check whether we actually
+	snarfed an address.
+	(bbdb-snarf-phone-eu-regexp, bbdb-snarf-postcode-eu-regexp)
+	(bbdb-snarf-address-eu-country): New variables.
+	(bbdb-snarf-label): Use save-match-data.
+	(bbdb-snarf-phone-nanp): Use save-match-data.  Reverse order of
+	snarfed phone numbers.
+	(bbdb-snarf-phone-eu, bbdb-snarf-address-eu): New functions.
+
+2015-11-08  Roland Winkler  <winkler@gnu.org>
+	Simplify re-sorting of records when a record has been changed.
+	Re-display re-sorted records.
+	* lisp/bbdb.el (bbdb-need-to-sort): Removed.
+	(bbdb-record-set-name): Simplify accordingly.
+	(bbdb-record-set-sortkey): Always evaluate new sortkey.
+	(bbdb-record-sortkey): Simplify accordingly.
+	(bbdb-change-record): Sort records if we have a new sort key.
+	(bbdb-redisplay-record-globally): Rename from
+	bbdb-maybe-update-display.  New optional arg sort.
+	(bbdb-delete-record-internal, bbdb-insert-record-internal): Do not
+	unset sort key.
+	(bbdb-display-records): Put point at beginning of buffer.
+	(bbdb-redisplay-record): New optional arg sort.  Throw error if
+	record was not displayed previously.
+	(bbdb-sort-records): Clarify status message.  Redisplay sorted
+	records.
+	* lisp/bbdb-com.el (bbdb-fix-records): Sort records.
+	(bbdb-create, bbdb-create-internal, bbdb-merge-records): Use nil
+	for unused second arg of bbdb-change-record.
+	(bbdb-edit-field, bbdb-transpose-fields): Do not worry about
+	re-sorting records.
+	* lisp/bbdb-mua.el (bbdb-annotate-message): Use nil
+	for unused second arg of bbdb-change-record.
+
 2015-09-10  Roland Winkler  <winkler@gnu.org>
 	* lisp/bbdb-anniv.el, lisp/bbdb-mu4e.el, lisp/bbdb-print.el:
 	* lisp/bbdb-snarf.el, lisp/bbdb-com.el, lisp/bbdb-message.el:
@@ -2034,7 +2141,7 @@
 ;; coding: utf-8
 ;; End:
 
-  Copyright (C) 2010-2015 Roland Winkler <winkler@gnu.org>
+  Copyright (C) 2010-2016 Roland Winkler <winkler@gnu.org>
 
   This file is part of the Insidious Big Brother Database (aka BBDB),
 
