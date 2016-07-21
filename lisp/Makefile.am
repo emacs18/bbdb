@@ -1,6 +1,6 @@
 # lisp/Makefile.am for BBDB
 #
-# Copyright (C) 2010-2015 Roland Winkler <winkler@gnu.org>
+# Copyright (C) 2010-2016 Roland Winkler <winkler@gnu.org>
 
 # Author: Roland Winkler <winkler@gnu.org>
 #  	  Christian Egli <christian.egli@sbs.ch>
@@ -50,6 +50,12 @@ if MU4E
 dist_lisp_LISP += bbdb-mu4e.el
 # We use the Automake variable AM_ELCFLAGS to include the Mu4e lisp directory
 # in the Emacs load path when compiling BBDB with Mu4e support.
+endif
+
+if WL
+dist_lisp_LISP += bbdb-wl.el
+# We use the Automake variable AM_ELCFLAGS to include the WL lisp directory
+# in the Emacs load path when compiling BBDB with WL support.
 endif
 
 lisp_DATA = bbdb-loaddefs.el

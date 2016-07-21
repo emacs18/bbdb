@@ -1,6 +1,6 @@
 ;;; bbdb-anniv.el --- get anniversaries from BBDB
 
-;; Copyright (C) 2011-2015 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2011-2016 Roland Winkler <winkler@gnu.org>
 
 ;; This file is part of the Insidious Big Brother Database (aka BBDB),
 
@@ -56,7 +56,7 @@ If FORM is nil, use the text following the date string in field LABEL
 as format string."
   :type '(repeat (cons :tag "Rule"
                        (symbol :tag "Label")
-                       (choice (regexp)
+                       (choice (string)
                                (const nil))))
   :group 'bbdb-utilities-anniv)
 
