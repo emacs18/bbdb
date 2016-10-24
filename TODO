@@ -41,6 +41,9 @@ See the end of the file for license conditions.
 
 ** Import / export BBDB records (e.g. vcard or its XML derivative)
    2011-04-05 Leo <sdl.web@gmail.com>
+   See https://github.com/trebb/bbdb-vcard (latest commit Apr 2010)
+   or its fork
+   https://github.com/tohojo/bbdb-vcard (latest commit Jul 2015)
 
 ** Allow splitting of bbdb-file into multiple files
 
