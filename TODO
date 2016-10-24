@@ -45,6 +45,10 @@ See the end of the file for license conditions.
    or its fork
    https://github.com/tohojo/bbdb-vcard (latest commit Jul 2015)
 
+** Import from Google Contacts (aka Gmail contacts)
+   2016-10-24 Barak A. Pearlmutter <barak@pearlmutter.net>
+   See https://github.com/tohojo/bbdb-vcard (last commit Sep 2015) which imports only name and email
+
 ** Allow splitting of bbdb-file into multiple files
 
 ** bbdb-narrow-display: Inverse of bbdb-append-display
