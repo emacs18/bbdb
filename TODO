@@ -47,7 +47,8 @@ See the end of the file for license conditions.
 
 ** Import from Google Contacts (aka Gmail contacts)
    2016-10-24 Barak A. Pearlmutter <barak@pearlmutter.net>
-   See https://github.com/tohojo/bbdb-vcard (last commit Sep 2015) which imports only name and email
+   See https://github.com/tohojo/bbdb-vcard (last commit Sep 2015) which imports only name and email.
+   See also the ASynK program, http://asynk.io/, https://github.com/skarra/ASynK (last commit May 2016), which is a python program that does bi-directional sync between bbdb, Google Contacts, MS Outlook, MS Exchange, and CardDAV.
 
 ** Incremental search of BBDB records like bbdb-
    2016-10-24 Barak A. Pearlmutter <barak@pearlmutter.net>
