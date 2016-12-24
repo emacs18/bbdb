@@ -14,7 +14,9 @@
 ;; installed in a subdirectory of the respective site-lisp directory.
 ;; We have to add this to the load-path:
 (let ((package-dir (concat "/usr/share/"
-			   (symbol-name flavor)
+			   (if (boundp 'debian-emacs-flavor)
+			       (symbol-name debian-emacs-flavor)
+			     "emacs")
 			   "/site-lisp/bbdb3")))
   ;; If package-dir does not exist the bbdb3 package must have been
   ;; removed but not purged, and we should skip the setup.
