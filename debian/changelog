@@ -1,3 +1,9 @@
+bbdb3 (3.1.2-7) unstable; urgency=medium
+
+  * switch from flavor to debian-emacs-flavor (closes: #849277)
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 24 Dec 2016 18:54:45 +0000
+
 bbdb3 (3.1.2-6) unstable; urgency=medium
 
   * track upstream changes, both bug fixes and new features
