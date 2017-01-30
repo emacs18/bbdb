@@ -2,8 +2,7 @@ Source: bbdb3
 Section: mail
 Priority: optional
 Maintainer: Barak A. Pearlmutter <bap@debian.org>
-Build-Depends: debhelper (>= 9),
-	       dh-autoreconf, automake (>= 1:1.13),
+Build-Depends: debhelper (>= 10),
 	       texinfo, texlive,
 	       emacs | emacs26-nox | emacs26 | emacs25-nox | emacs25 | emacs24-nox | emacs24
 Standards-Version: 3.9.8
