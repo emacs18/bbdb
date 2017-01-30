@@ -18,6 +18,7 @@ if [ ${FLAVOR} = emacs19 ]; then exit 0; fi
 if [ ${FLAVOR} = emacs20 ]; then exit 0; fi
 if [ ${FLAVOR} = emacs21 ]; then exit 0; fi
 if [ ${FLAVOR} = emacs22 ]; then exit 0; fi
+if [ ${FLAVOR} = emacs23 ]; then exit 0; fi
 
 echo install/${PACKAGE}: Handling install for emacsen flavor ${FLAVOR}
 
