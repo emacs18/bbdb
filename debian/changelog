@@ -1,3 +1,10 @@
+bbdb3 (3.1.2-9) UNRELEASED; urgency=medium
+
+  * track upstream changes
+    - UUIDs, database format 9
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 16 Oct 2017 21:08:36 +0100
+
 bbdb3 (3.1.2-8) unstable; urgency=medium
 
   * track upstream changes
