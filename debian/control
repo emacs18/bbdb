@@ -5,9 +5,9 @@ Maintainer: Barak A. Pearlmutter <bap@debian.org>
 Build-Depends: debhelper (>= 10),
 	       texinfo, texlive,
 	       emacs | emacs26-nox | emacs26 | emacs25-nox | emacs25 | emacs24-nox | emacs24
-Standards-Version: 3.9.8
+Standards-Version: 4.1.1
 Homepage: http://savannah.nongnu.org/projects/bbdb/
-Vcs-Git: git://anonscm.debian.org/collab-maint/bbdb3.git
+Vcs-Git: https://anonscm.debian.org/git/collab-maint/bbdb3.git
 Vcs-Browser: https://anonscm.debian.org/gitweb/?p=collab-maint/bbdb3.git
 
 Package: bbdb3
