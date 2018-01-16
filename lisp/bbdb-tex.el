@@ -1,7 +1,6 @@
 ;;; bbdb-tex.el --- feed BBDB into LaTeX  -*- lexical-binding: t -*-
 
-;; Copyright (C) 1993 Boris Goldowsky
-;; Copyright (C) 2010-2017 Roland Winkler <winkler@gnu.org>
+;; Copyright (C) 2010-2017  Free Software Foundation, Inc.
 
 ;; Authors: Boris Goldowsky <boris@cs.rochester.edu>
 ;;          Dirk Grunwald <grunwald@cs.colorado.edu>
@@ -242,7 +241,15 @@ The remainder are lists LIST that should have one of these forms:
  (epilog STRING)
 
   The string STRING is inserted at the end of the buffer."
-  :group 'bbdb-utilities-tex)
+  :group 'bbdb-utilities-TeX
+  :type '(repeat (cons (symbol :tag "rule")
+                       (repeat
+                        (choice (cons :tag "demand" (const demand) sexp)
+                                (list :tag "prolog" (const prolog) string)
+                                (cons :tag "record" (const record) sexp)
+                                (list :tag "separator" (const separator) string)
+                                (list :tag "epilog" (const epilog) string)
+                                (cons :tag "options" (const options) sexp))))))
 
 (defcustom bbdb-tex-rule-default 'multi-line
   "Default rule for BBDB tex.
@@ -290,7 +297,9 @@ The elements EDIT of `bbdb-address-format-list' are ignored."
 (defcustom bbdb-tex-address-layout 2
   "Address layout according to `bbdb-tex-address-format-list'.
 2 is multi-line layout, 3 is one-line layout."
-  :group 'bbdb-utilities-tex)
+  :group 'bbdb-utilities-TeX
+  :type '(choice (const :tag "multi-line" 2)
+                 (const :tag "one-line" 3)))
 
 (defcustom bbdb-tex-file "~/bbdb.tex"
   "Default file name for TeXing BBDB."
