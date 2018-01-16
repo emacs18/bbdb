@@ -8,9 +8,3 @@
 # doc/bbdb.info is generated automatically from doc/bbdb.texi, and the
 # copyright notice is copied verbatim in debian/copyright.
 bbdb3 source: license-problem-gfdl-invariants * invariant part is: with the invariant section being gnu general public license
-
-# The upstream/3.1.1 tag in git and the upstream tarball differ by the
-# accidential exclusion of lisp/makefile-temp from the "make dist"
-# generated tarball.  This file is not used in the debian build, and
-# its omission from the tarball should be addressed upstream.
-bbdb3 source: quilt-patch-using-template-description debian-changes
