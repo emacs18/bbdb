@@ -1,3 +1,12 @@
+bbdb3 (3.2-1) unstable; urgency=medium
+
+  * new upstream release
+  * update debian/copyright to upstream rm tex/*.tex
+  * secure URL in debian/watch
+  * remove unused lintian override regarding lisp/makefile-temp
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Tue, 16 Jan 2018 09:27:30 +0000
+
 bbdb3 (3.1.2-9) unstable; urgency=medium
 
   * track upstream changes
