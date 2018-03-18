@@ -18,7 +18,8 @@ Replaces: bbdb
 Provides: bbdb
 Breaks: bbdb (<< 3)
 Description: Reboot of the BBDB Insidious Big Brother Database for Emacs
- This is a reboot of BBDB, the Insidious Big Brother Database for
+ This is a reboot of BBDB, the Insidious Big Brother Database for GNU
  Emacs.  It provides an address book for email and snail mail
  addresses, phone numbers and the like.  It can be linked with various
- Emacs mail clients (Rmail, Gnus, VM).  BBDB is fully customizable.
+ Emacs mail clients (Message and Mail mode, Rmail, Gnus, MH-E, Mu4e,
+ VM, and Wanderlust).  BBDB is fully customizable.
