@@ -1,3 +1,19 @@
+2018-03-17  Vincent Belaïche  <vincentb1@users.sourceforge.net>
+	* lisp/Makefile.am (abs_target): Make absolute path for
+	bbdb-loaddefs.el MSWindows aware.
+
+2018-03-17  Roland Winkler  <winkler@gnu.org>
+	* bbdb.el (bbdb-register-record): New function renamed from
+	bbdb-hash-record.
+	(bbdb-parse-records, bbdb-change-record): Use it.
+
+2018-03-17  Roland Winkler  <winkler@gnu.org>
+	* bbdb-com.el (bbdb-create-internal): Bug fix.  Support old
+	calling sequence with warning.
+
+2018-03-02  Stefan Monnier <monnier@iro.umontreal.ca>
+	* bbdb.el: Add missing "Maintainer:" header
+
 2018-01-06  Roland Winkler  <winkler@gnu.org>
 	* configure.ac: Increase version number to 3.2.
 
