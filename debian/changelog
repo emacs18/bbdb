@@ -1,3 +1,11 @@
+bbdb3 (3.2-2) unstable; urgency=medium
+
+  * track upstream mods
+  * use secure copyright format url
+  * update package description per current upstream README
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 18 Mar 2018 21:37:49 +0000
+
 bbdb3 (3.2-1) unstable; urgency=medium
 
   * new upstream release
