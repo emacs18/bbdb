@@ -1,3 +1,12 @@
+bbdb3 (3.2-3) unstable; urgency=medium
+
+  * track upstream mods
+  * swizzle packaging repo to salsa
+  * bump policy version
+  * bump to dh11
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Mon, 16 Apr 2018 23:03:00 +0100
+
 bbdb3 (3.2-2) unstable; urgency=medium
 
   * track upstream mods
