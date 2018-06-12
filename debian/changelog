@@ -1,3 +1,9 @@
+bbdb3 (3.2-4) unstable; urgency=medium
+
+  * track upstream mods
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Tue, 12 Jun 2018 11:19:34 +0100
+
 bbdb3 (3.2-3) unstable; urgency=medium
 
   * track upstream mods
