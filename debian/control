@@ -14,6 +14,7 @@ Package: bbdb3
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: emacs | emacs26 | emacs25 | emacs24 | emacs-snapshot | emacsen
+Enhances: wl, wl-beta
 Replaces: bbdb
 Provides: bbdb
 Breaks: bbdb (<< 3)
