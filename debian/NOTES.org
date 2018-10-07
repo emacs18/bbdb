@@ -1,0 +1,10 @@
+* Code to consider including
+** CSV import
+- https://gitlab.com/iankelling/bbdb-csv-import.git
+* Documentation to consider including or pointing to
+- https://github.com/andycowl/bbdb3-manual/ generated from in-source documentation
+- https://www.emacswiki.org/emacs/UpgradeBBDB bbdb2 to bbdb3 dictionary
+- https://www.emacswiki.org/emacs/BBDBV3-Wl bbdb3 wanderlust integration
+- https://www.emacswiki.org/emacs/CategoryBbdb misc mainly bbdb2
+* Other bbdb3 distributions
+- https://elpa.gnu.org/packages/bbdb.html
