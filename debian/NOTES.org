@@ -8,3 +8,11 @@
 - https://www.emacswiki.org/emacs/CategoryBbdb misc mainly bbdb2
 * Other bbdb3 distributions
 - https://elpa.gnu.org/packages/bbdb.html
+* Relevant Software
+** ASynK: synchronize bbdb database with Google contacts, etc
+- bi-directional syncronization
+- runs outside emacs
+** EBDB: bbdb3 clone using EIEIO database
+- implements ebdb-migrate-from-bbdb
+- https://github.com/girzel/ebdb/
+- includes a manual
