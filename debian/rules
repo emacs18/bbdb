@@ -7,6 +7,7 @@
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+		--disable-docs \
 		--without-vm-dir \
 		--docdir='$${datarootdir}/doc/bbdb3' \
 		--with-lispdir='$${datadir}/emacs/site-lisp/bbdb3'
@@ -21,12 +22,6 @@ execute_after_dh_auto_install:
 	@echo "Deleting compiled elisp from installation tree, as compilation"
 	@echo "is done at install time by the emacsen infrastructure."
 	find debian/bbdb3 -name '*.elc' -print -delete
-	@echo "Info file not ready." # when it is, create debian/bbdb3.info
-	-rm --verbose debian/bbdb3/usr/share/info/bbdb.info
-	-rm --verbose debian/bbdb3/usr/share/info/dir
-	-rmdir --verbose debian/bbdb3/usr/share/info
-	@echo "PDF manual is just reformatted info file, not ready."
-	-rm --verbose debian/bbdb3/usr/share/doc/bbdb3/bbdb.pdf
 	@echo "dh_installchangelog installs this later with standard name"
 	-rm --verbose debian/bbdb3/usr/share/doc/bbdb3/ChangeLog
 	@echo "copy of GPLv3 is not needed due to pointer in .../copyright"
