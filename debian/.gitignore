@@ -4,4 +4,5 @@
 /autoreconf.after
 /autoreconf.before
 /bbdb3/
+/debhelper-build-stamp
 /files
