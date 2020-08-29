@@ -1,11 +1,11 @@
-bbdb3 (3.2-8) UNRELEASED; urgency=low
+bbdb3 (3.2-8) unstable; urgency=medium
 
   * Bump debhelper from old 12 to 13.
   * Set upstream metadata fields: Repository, Repository-Browse.
   * Update standards version to 4.5.0, no changes needed.
   * Merge & activate upstream config option to disable texi documentation
 
- -- Barak A. Pearlmutter <bap@debian.org>  Thu, 20 Aug 2020 13:12:15 +0100
+ -- Barak A. Pearlmutter <barak@pearlmutter.net>  Sat, 29 Aug 2020 08:33:40 +0100
 
 bbdb3 (3.2-7) unstable; urgency=medium
 
