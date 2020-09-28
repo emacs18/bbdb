@@ -1,3 +1,21 @@
+2020-09-28  Roland Winkler  <winkler@gnu.org>
+	* lisp/bbdb-sc.el (bbdb-sc-attribution-field): Quieten compiler.
+
+2020-09-28  Stefan Monnier <monnier@iro.umontreal.ca>
+	* lisp/bbdb.el, lisp/bbdb-tex.el, lisp/bbdb-migrate.el: Require
+	cl-lib.
+
+2020-08-29  David Maus <dmause@dmaus.name>
+	Use wl sticky buffer name if necessary.
+	* lisp/bbdb-wl.el (bbdb/wl-header): Use wl sticky buffer name if
+	necessary.
+
+2020-08-29  Stefan Monnier <monnier@iro.umontreal.ca>
+	Use cl-defstruct to define BBDB record type.
+	* lisp/bbdb-com.el: Use cl-defstruct to define BBDB record type.
+	* lisp/bbdb-com.el, lisp/bbdb-com.el, lisp/bbdb-snarf.el:
+	* lisp/bbdb-migrate.el: Use setf to set records.
+
 2020-01-01  Roland Winkler  <winkler@gnu.org>
 	* lisp/bbdb-com.el (bbdb-search): New keywords :invert and
 	:case-fold.  Allow arbitrary functions for keyword :bool.
