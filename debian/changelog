@@ -1,3 +1,11 @@
+bbdb3 (3.2-10) unstable; urgency=medium
+
+  * track upstream mods through first half of Jan 2021
+  * yak shave uscan support file
+  * bump policy
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sat, 16 Jan 2021 11:45:09 +0000
+
 bbdb3 (3.2-9) unstable; urgency=medium
 
   * track upstream mods through 28-Sep-2020 including emacs 27 fix
