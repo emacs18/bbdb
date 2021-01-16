@@ -1,3 +1,2 @@
-version=3
-opts="pgpsigurlmangle=s/$/.sig/" \
-  https://download.savannah.gnu.org/releases/bbdb/bbdb-(.*)\.tar\.gz
+version=4
+opts=pgpsigurlmangle=s/$/.sig/    https://download.savannah.gnu.org/releases/bbdb bbdb-@ANY_VERSION@@ARCHIVE_EXT@
