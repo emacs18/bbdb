@@ -1,3 +1,10 @@
+bbdb3 (3.2-11) unstable; urgency=medium
+
+  * expand list of things bbdb3 enhances
+  * bump policy
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Thu, 11 Nov 2021 16:00:24 +0000
+
 bbdb3 (3.2-10) unstable; urgency=medium
 
   * track upstream mods through first half of Jan 2021
