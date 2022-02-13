@@ -1,3 +1,9 @@
+bbdb3 (3.2-12) UNRELEASED; urgency=medium
+
+  * track upstream mods
+
+ -- Barak A. Pearlmutter <bap@debian.org>  Sun, 13 Feb 2022 20:57:52 +0000
+
 bbdb3 (3.2-11) unstable; urgency=medium
 
   * expand list of things bbdb3 enhances
