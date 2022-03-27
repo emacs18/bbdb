@@ -40,7 +40,10 @@
 (eval-and-compile
   (autoload 'gnus-fetch-original-field "gnus-utils")
   (autoload 'gnus-summary-select-article "gnus-sum")
+  (autoload 'gnus-info-params "gnus")
+  (autoload 'gnus-get-info "gnus")
   (defvar gnus-article-buffer)
+  (defvar gnus-newsgroup-name)
 
   (autoload 'bbdb/vm-header "bbdb-vm")
   (autoload 'vm-follow-summary-cursor "vm-motion")
@@ -89,7 +92,7 @@ Return values include
       (if (memq major-mode (cdr elt))
           (setq mua (car elt)
                 mm-alist nil)))
-    (or mua (error "BBDB: MUA `%s' not supported" major-mode))))
+    (or mua (user-error "BBDB: MUA `%s' not supported" major-mode))))
 
 ;;;###autoload
 (defun bbdb-message-header (header)
@@ -103,15 +106,26 @@ MIME encoded headers are decoded.  Return nil if HEADER does not exist."
   ;; of a header if we request the value of the same header multiple times.
   ;; (We would reset the remember table each time we move on to a new message.)
   (let* ((mua (bbdb-mua))
-         (val (cond (;; It seems that `gnus-fetch-field' fetches decoded content of
-                     ;; `gnus-visible-headers', ignoring `gnus-ignored-headers'.
-                     ;; Here we use instead `gnus-fetch-original-field' that fetches
-                     ;; the encoded content of `gnus-original-article-buffer'.
-                     ;; Decoding makes this possibly a bit slower, but something like
-                     ;; `bbdb-select-message' does not get fooled by an apparent
-                     ;; absence of some headers.
-                     ;; See http://permalink.gmane.org/gmane.emacs.gnus.general/78741
-                     (eq mua 'gnus) (gnus-fetch-original-field header))
+         (val (cond (;; `gnus-fetch-field' can fetch only the content of
+                     ;; `gnus-visible-headers', but it ignores
+                     ;; `gnus-ignored-headers'.  `gnus-fetch-original-field'
+                     ;; uses the uncensored set of headers in
+                     ;; `gnus-original-article-buffer'.  The latter headers are
+                     ;; encoded, so that decoding makes this slower, but BBDB
+                     ;; does not get fooled by an apparent absence of some
+                     ;; headers.  (See gmane.emacs.gnus.general #78741)
+                     (or (gnus-fetch-original-field header)
+                         ;; `gnus-fetch-original-field' returns nil in nndoc
+                         ;; groups (digests) because `gnus-original-article-buffer'
+                         ;; is empty for the nndoc summary buffer, but not for
+                         ;; the parent summary buffer. (bug#54423)
+                         (let ((parent-summary-buffer
+                                (cadr (assq 'quit-config
+                                            (gnus-info-params
+                                             (gnus-get-info gnus-newsgroup-name))))))
+                           (and parent-summary-buffer
+                                (with-current-buffer parent-summary-buffer
+                                  (gnus-fetch-original-field header))))))
                     ((eq mua 'vm) (bbdb/vm-header header))
                     ((eq mua 'rmail)
                      (with-current-buffer rmail-buffer
@@ -244,7 +258,7 @@ Usually this function is called by the wrapper `bbdb-mua-update-records'."
   (cond ((eq t action)
          (setq action 'create))
         ((not (memq action '(search update query create nil)))
-         (error "Illegal value of arg action: %s" action)))
+         (user-error "Illegal value of arg action: %s" action)))
 
   (let (records-alist records elt)
     ;; association list: records -> addresses
@@ -739,7 +753,7 @@ FIELD defaults to `bbdb-annotate-field'.
 If REPLACE is non-nil, ANNOTATION replaces the content of FIELD.
 If ANNOTATION is an empty string and REPLACE is non-nil, delete FIELD."
   (if (memq field '(name firstname lastname phone address xfields))
-      (error "Field `%s' illegal" field))
+      (user-error "Field `%s' illegal" field))
   (setq annotation (bbdb-string-trim annotation))
   (cond ((memq field '(affix organization mail aka))
          (setq annotation (list annotation)))
@@ -825,7 +839,7 @@ HEADER-CLASS is defined in `bbdb-message-headers'.  If it is nil,
 use all classes in `bbdb-message-headers'."
   (interactive (bbdb-mua-edit-field-interactive))
   (cond ((memq field '(firstname lastname address phone xfields))
-         (error "Field `%s' not editable this way" field))
+         (user-error "Field `%s' not editable this way" field))
         ((not field)
          (setq field bbdb-mua-edit-field)))
   (bbdb-mua-wrapper
